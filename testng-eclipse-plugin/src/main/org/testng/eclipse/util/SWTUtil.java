@@ -1,6 +1,8 @@
 package org.testng.eclipse.util;
 
+import org.eclipse.core.internal.resources.File;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.resource.JFaceResources;
@@ -14,6 +16,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
@@ -145,4 +148,23 @@ public class SWTUtil {
   public static GridData createGridData() {
     return new GridData(SWT.FILL, SWT.TOP, true, false);
   }
+  
+  public static Text createFileBrowserText(final Group group, final Composite container, String text,
+      ModifyListener listener) {
+    final Text result = createLabelText(group, text, listener);
+    Button button = new Button(group, SWT.PUSH);
+    button.setText("Browse...");
+    button.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        ResourceFileSelectionDialog dialog = new ResourceFileSelectionDialog("Test Class Dependency File Selection", "Select any dependent Java file required for the Test Class", new String[] { "java" });
+        if (dialog.open() == dialog.OK.getCode()) {
+          Object[] res = dialog.getResult();
+          if (res.length >= 1) {
+            result.setText(((File) res[0]).toString().trim());
+          }
+        }
+      }
+    });
+    return result;
+  }  
 }
