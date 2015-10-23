@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -40,9 +41,17 @@ import org.testng.eclipse.util.Utils;
 import org.testng.eclipse.util.Utils.JavaElement;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.testng.eclipse.util.SWTUtil.getJavaClassNameFromFullPath;
+import static org.testng.eclipse.util.SWTUtil.getJavaPackageNameFromFullPath;
+import static org.testng.eclipse.util.SWTUtil.getPackageNameFromFullPath;
+import static org.testng.eclipse.wizards.WizardConstants.*;
 
 /**
  * Generate a new TestNG class and optionally, the corresponding XML suite file.
@@ -56,7 +65,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
   //Added for enhancement
   private org.eclipse.swt.widgets.Combo frameWorks;
   private org.eclipse.swt.widgets.Combo modifierNames;
-  private Text m_returnTypeText;
+  private Combo m_returnTypeText;
   private Text m_methodNameText;
   private Text m_methodParamsText;
   public static final String[] MODIFIERS = new String[] {
@@ -69,7 +78,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
   private Text m_assignVariableNameText; 
   private org.eclipse.swt.widgets.Combo assertions;
   public static final String[] ASSERTIONS = new String[] {
-      "Assert Assigned Variable to true", "Assert Assigned Variable to false",  "Assert Statement(Class.method) to true", "Assert Statement(Class.method) to false"
+      DISPLAY_ASSERT_EQUALS, DISPLAY_ASSERT_NON_EQUALS,
+      DISPLAY_ASSERT_NULL, DISPLAY_ASSERT_NOTNULL
     };   
 
   private Map<String, Button> m_annotations = new HashMap<String, Button>();
@@ -80,6 +90,36 @@ public class NewTestNGClassWizardPage extends WizardPage {
     "BeforeTest",  "AfterTest", "",
     "BeforeSuite", "AfterSuite", ""
   };
+  
+  private AtomicInteger atomicInteger = new AtomicInteger(1);
+//  private Map<Integer, Map<String, Control>> m_methodSignatureRowObjects = new HashMap<>();
+  private Map<Integer, Map<String, Object>> m_methodSignature = new HashMap<>();
+  private Map<String, Map<String, String>> m_methodImplementation = new HashMap<>();
+  // Map<String, Object>
+  // first map Object will be Map<String, Control>
+  private Map<String, Control> m_methodSignatureRowObjects;  
+  // second object will be list of maps of method implementation
+  private Map<String, Control> m_methodImpl;
+  List<Map<String, Control>> m_impl_lists;
+  
+//  private Map<Integer, Map<String, Map<String, Object>>> m_methodRowObjects = new HashMap<>();
+  private  Map<Integer, Map<String, Object>> m_methodRowObjects = new ConcurrentHashMap<>(); 
+//  private Map<String, Map<String, Object>> m_methodHolder = new HashMap<>(); 
+  private Map<String, Object> m_methodSignImplContainer;
+  
+  private List<Map<String, Map<String, String>>> methodImplList = new ArrayList<>();
+  
+  private Button b_static;
+  private Button b_final;
+  private Button b_throws;
+  
+  public static final String[] RETURN_TYPES = new String[] {
+      "void", "Integer", "Double", "Object", "Boolean"
+    };    
+  
+  private AtomicInteger atomicIntegerForWritingJavaContent = new AtomicInteger(0);
+  private Text m_assignVariableValueText; 
+  
 
   public NewTestNGClassWizardPage() {
     super(ResourceUtil.getString("NewTestNGClassWizardPage.title"));
@@ -222,7 +262,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
     //Add Dependency class creation section
     {
       Group g = new Group(parent, SWT.SHADOW_ETCHED_OUT);
-      g.setText("Dependency Class Creation Section");
+      g.setText("Dependency Class");
       g.setToolTipText("Add any new Dependency Class required for Test Class by clicking the below Add Dependency Class button");
       GridData gd = new GridData(GridData.FILL_HORIZONTAL);
       g.setLayoutData(gd);
@@ -275,26 +315,36 @@ public class NewTestNGClassWizardPage extends WizardPage {
     
     //final Composite child = SWTUtil.createGridContainer(source, 1);
     
-    
     Group g = new Group(child, SWT.SHADOW_ETCHED_OUT);
-    g.setText("Test Method Signature");  
+    g.setText("Test Method");  
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
-    //gd.verticalSpan = 2;      
+    //gd.verticalSpan = 2; 
+    gd.horizontalSpan = 20;
     g.setLayoutData(gd);
     
     //ScrolledComposite g = new ScrolledComposite(group, SWT.V_SCROLL | SWT.H_SCROLL);
     
     GridLayout layout = new GridLayout();
     g.setLayout(layout);
-    layout.numColumns = 16;     
+    layout.numColumns = 20;     
     
     
-    Button b_static = new Button(g, SWT.CHECK);
+    b_static = new Button(g, SWT.CHECK);
     b_static.setText("static");
+    b_static.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+          dialogChanged();
+      }
+    });    
     
-    Button b_final = new Button(g, SWT.CHECK);
-    b_final.setText("final");    
+    b_final = new Button(g, SWT.CHECK);
+    b_final.setText("final");  
+    b_final.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+          dialogChanged();
+      }
+    });     
     
     Label label1 = new Label(g, SWT.NULL);
     label1.setText("&ModifierName:");   
@@ -305,57 +355,226 @@ public class NewTestNGClassWizardPage extends WizardPage {
     }
     GridData modifierName = new GridData(GridData.FILL_HORIZONTAL);
     modifierNames.setLayoutData(modifierName);      
+    modifierNames.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
     
+/*
     Label label2 = new Label(g, SWT.NULL);
     label2.setText("&ReturnType:");  
-    m_returnTypeText = new Text(g, SWT.BORDER | SWT.SINGLE);    
+    m_returnTypeText = new Combo(g, SWT.BORDER | SWT.SINGLE);    
     GridData grid = new GridData(GridData.FILL_HORIZONTAL);
     grid.horizontalSpan = 2;
-    m_returnTypeText.setLayoutData(grid);       
+    m_returnTypeText.setLayoutData(grid);  
+  */  
+    m_returnTypeText = SWTUtil.createFileBrowserCombo(g, child, "&ReturnType:", new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        if ((m_returnTypeText.getText().contains("/")|| m_returnTypeText.getText().contains("."))){
+          m_returnTypeText.setText(getJavaClassNameFromFullPath(m_returnTypeText.getText()));
+        }
+        dialogChanged();
+      }
+    });
+    m_returnTypeText.setToolTipText("Please select any of the below Method Return types. If not available, select any Java Type by clicking Browse");
+    for(String returnType : RETURN_TYPES){
+      m_returnTypeText.add(returnType);  
+    }     
     
     Label label3 = new Label(g, SWT.NULL);
     label3.setText("&MethodName:");  
     m_methodNameText = new Text(g, SWT.BORDER | SWT.SINGLE);
     GridData methodGrid = new GridData(GridData.FILL_HORIZONTAL);
     methodGrid.horizontalSpan = 2;
-    m_methodNameText.setLayoutData(methodGrid);       
+    m_methodNameText.setLayoutData(methodGrid);  
+    m_methodNameText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });      
     
     Label label4 = new Label(g, SWT.NULL);
     label4.setText("&MethodParams:");   
     m_methodParamsText = new Text(g, SWT.BORDER | SWT.SINGLE);
     GridData methodParamsGrid = new GridData(GridData.FILL_HORIZONTAL);
-    methodParamsGrid.horizontalSpan = 2;
-    m_methodParamsText.setLayoutData(methodParamsGrid);         
+    methodParamsGrid.horizontalSpan = 3;
+    m_methodParamsText.setLayoutData(methodParamsGrid);  
+    m_methodParamsText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });      
     
-    Button b1 = new Button(g, SWT.CHECK);
-    b1.setText("throwsClause");    
+    b_throws = new Button(g, SWT.CHECK);
+    b_throws.setText("throwsClause");   
+    b_throws.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+         dialogChanged();
+      }
+    });     
     
+   /* 
     Button addImpl = new Button(g, SWT.CHECK);
     addImpl.setText("Add test implementation");     
     addImpl.addSelectionListener(toSelectionAdapter(g, child));
+    */
     
-    Button addMore = new Button(g, SWT.PUSH);
-    addMore.setText("Add More Test Method...");
+    final Button addMore = new Button(g, SWT.PUSH);
+    addMore.setText("Add More...");
     addMore.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
+        atomicInteger.addAndGet(1);
         createTestMethods(child);
         child.layout();
+        
+        //set button add more invisible for pervious row
+        /*Map<String, Control> prevRow = m_methodSignatureRowObjects.get(atomicInteger.get()-1);
+        Button prevAddMore = (Button)prevRow.get(METHOD_ADD_MORE);
+        prevAddMore.setVisible(false);   
+        */
+        
+        Map<String, Object> prevObj =  m_methodRowObjects.get(atomicInteger.get()-1);
+        Map<String, Control> prevRow = (Map<String, Control>) prevObj.get(METHOD_ROW_SIGNATURE);
+        
+        Button prevAddMore = (Button)prevRow.get(METHOD_ADD_MORE);
+        prevAddMore.setVisible(false);         
+        
       }
       
     });
     
-    // Set the child as the scrolled content of the ScrolledComposite
-//    child.setContent(child);
+//    createTestMethodImplementationSection(g, child);    
 
-    // Set the minimum size
-    //child.setMinSize(800, 800);
+    Group methodImpl = new Group(g, SWT.SHADOW_ETCHED_OUT);
+    methodImpl.setText("Method Implementation");
+    GridData gd1 = new GridData(GridData.FILL_HORIZONTAL);
+    methodImpl.setLayoutData(gd1);
+//    gd.verticalSpan = 10;
+    gd1.horizontalSpan = 20;
+    GridLayout layout1 = new GridLayout();
+    methodImpl.setLayout(layout1);
+    layout1.numColumns = 20;
+  
+    
+    {
+      m_dependentClassNameText = SWTUtil.createFileBrowserText(methodImpl, child,
+          "&ClassName:", new ModifyListener() {
+            public void modifyText(ModifyEvent e) {
+              try {
+                if ((m_dependentClassNameText.getText().contains("/")|| m_dependentClassNameText.getText().contains("."))){
+                  dependentClassNameTextChanged((m_dependentClassNameText.getText()), methods);
+                }
+                dialogChanged();
+              } catch (ClassNotFoundException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+            }
+          });
+      GridData gd2 = (GridData)m_dependentClassNameText.getLayoutData();
+      gd2.horizontalSpan = 4;
+      m_dependentClassNameText.setLayoutData(gd2);
+      m_dependentClassNameText.setToolTipText("Please Select any Dependent Class Name that needs to be used for method invocation. If not available, create new one using Add Dependency Class");
+    }
+    
+    Label methodsLabel = new Label(methodImpl, SWT.NULL);
+    methodsLabel.setText("&Methods:");
+    methods = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
+    GridData modifierNameImpl = new GridData(GridData.FILL_HORIZONTAL);
+    methods.setLayoutData(modifierNameImpl);
+    methods.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
 
-    // Expand both horizontally and vertically
-//    child.setExpandHorizontal(true);
-//    child.setExpandVertical(true);    
+    Label methodParamsLabel = new Label(methodImpl, SWT.NULL);
+    methodParamsLabel.setText("&Params:");
+    m_dependentMethodParamsText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);
+    m_dependentMethodParamsText.setToolTipText("Please enter Method Parameters if any as comma separated values");
+    m_dependentMethodParamsText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
+
+    Label assignVariablesLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesLabel.setText("&Assign variables:");
+
+    Label assignVariablesTypeLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesTypeLabel.setText("&Type:");
+    assignVariableTypes = new org.eclipse.swt.widgets.Combo(methodImpl,
+        SWT.BORDER | SWT.SINGLE);
+    assignVariableTypes.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });    
+
+    Label assignVariablesNameLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesNameLabel.setText("&Name:");
+    m_assignVariableNameText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);
+    m_assignVariableNameText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    }); 
+    
+    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesValueLabel.setText("&Value:");
+    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);    
+
+    Label assertionsLabel = new Label(methodImpl, SWT.NULL);
+    assertionsLabel.setText("&Assertions:");
+    assertions = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
+    for (String assertion : ASSERTIONS) {
+      assertions.add(assertion);
+    }
+    GridData assertionsGrid = new GridData(GridData.FILL_HORIZONTAL);
+    assertions.setLayoutData(assertionsGrid);
+    assertions.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });    
+    
+    Button addMoreImpl = new Button(methodImpl, SWT.PUSH);
+    addMoreImpl.setText("Add More...");
+    addMoreImpl.addSelectionListener(toSelectionAdapterForDependencyInvocation(methodImpl, child));
+    addMoreImpl.setData(atomicInteger.get());
+    
+    m_methodSignatureRowObjects = new HashMap<>();
+    m_methodSignatureRowObjects.put(METHOD_STATIC, b_static);
+    m_methodSignatureRowObjects.put(METHOD_FINAL, b_final);
+    m_methodSignatureRowObjects.put(METHOD_MODIFIER, modifierNames);
+    m_methodSignatureRowObjects.put(METHOD_RETURN_TYPE, m_returnTypeText);
+    m_methodSignatureRowObjects.put(METHOD_NAME, m_methodNameText);
+    m_methodSignatureRowObjects.put(METHOD_PARAMS_TYPE, m_methodParamsText);
+    m_methodSignatureRowObjects.put(METHOD_THROWS_CLAUSE, b_throws);
+    m_methodSignatureRowObjects.put(METHOD_ADD_MORE, addMore);
+    
+    m_methodImpl = new HashMap<>();
+    m_methodImpl.put(DEPENDENT_CLASSNAME, m_dependentClassNameText);
+    m_methodImpl.put(METHODS, methods);
+    m_methodImpl.put(DEPENDENT_METHOD_PARAMS, m_dependentMethodParamsText);
+    m_methodImpl.put(ASSIGN_VARIABLE_TYPES, assignVariableTypes);
+    m_methodImpl.put(ASSIGN_VARIABLE_NAME, m_assignVariableNameText);
+    m_methodImpl.put(ASSIGN_VARIABLE_VALUE, m_assignVariableValueText);
+    m_methodImpl.put(ASSERTIONS_COMBO, assertions);
+    m_methodImpl.put(METHOD_ADD_MORE_IMPL, addMoreImpl);
+    
+    m_impl_lists = new ArrayList<>();
+//    m_impl_lists.add(m_methodSignatureRowObjects);
+    m_impl_lists.add(m_methodImpl);
+    
+    m_methodSignImplContainer = new HashMap<>();
+    m_methodSignImplContainer.put(METHOD_ROW_SIGNATURE, m_methodSignatureRowObjects);
+    m_methodSignImplContainer.put(METHOD_ROW_IMPL, m_impl_lists);
+    
+    m_methodRowObjects.put(atomicInteger.get(), m_methodSignImplContainer);
     
     return child;
-    
   }
   
   /**
@@ -439,9 +658,151 @@ public class NewTestNGClassWizardPage extends WizardPage {
         return;
       }
     }
+    //validations for method signature
+    int hitsForAddMoreMethods = getAtomicInteger().get();
+    if(b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
+        || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
+        || !StringUtils.isEmptyString(m_methodNameText.getText())) {
+      if(validateMethodAndSetSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText)){
+        //Iterate for every  method impl inside method row
+        Map<String, Object> obj =  m_methodRowObjects.get(atomicInteger.get());
+        List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) obj.get(METHOD_ROW_IMPL);
+        for(Map<String, Control> map :objImplList){
+          Text t_dc = (Text)map.get(DEPENDENT_CLASSNAME);
+          Combo c_m = (Combo)map.get(METHODS);
+          Text t_dmp = (Text)map.get(DEPENDENT_METHOD_PARAMS);
+          Combo c_vt = (Combo)map.get(ASSIGN_VARIABLE_TYPES);
+          Text t_vn = (Text)map.get(ASSIGN_VARIABLE_NAME);
+          Combo c_a = (Combo)map.get(ASSERTIONS_COMBO);
+          Text t_avv = (Text)map.get(ASSIGN_VARIABLE_VALUE);
+          if(!StringUtils.isEmptyString(t_dc.getText()) || !StringUtils.isEmptyString(c_m.getText()) 
+              || !StringUtils.isEmptyString(t_dmp.getText())  || !StringUtils.isEmptyString(c_vt.getText())  
+              || !StringUtils.isEmptyString(t_vn.getText()) || !StringUtils.isEmptyString(c_a.getText()) || !StringUtils.isEmptyString(t_avv.getText())){
+            
+            if(!validateAndSetMethodImpl(t_dc, c_m, t_dmp, c_vt, t_vn, c_a, t_avv)){
+              return;
+            }
+          }
+        }
+      }
+      else{
+        return;
+      }
+    }
+    else{
+      if(hitsForAddMoreMethods > 1){
+        for(int i = 1 ; i <= getAtomicInteger().get(); i++){
+          Map<String, Object> rowObj = m_methodRowObjects.get(i);
+          Map<String, Control> methodSign = (Map<String, Control>) rowObj.get(METHOD_ROW_SIGNATURE);
+          if(rowObj != null){
+            Button b_st = (Button)methodSign.get(METHOD_STATIC);
+            Button b_fn = (Button)methodSign.get(METHOD_FINAL);
+            Combo c_md = (Combo)methodSign.get(METHOD_MODIFIER);
+            Combo c_mrt = (Combo)methodSign.get(METHOD_RETURN_TYPE);
+            Text t_mn = (Text)methodSign.get(METHOD_NAME);
+            Text t_mp = (Text)methodSign.get(METHOD_PARAMS_TYPE);
+            Button b_th = (Button)methodSign.get(METHOD_THROWS_CLAUSE);
+            if(b_st.getSelection() || b_fn.getSelection() || b_th.getSelection() || !StringUtils.isEmptyString(c_md.getText()) 
+                || !StringUtils.isEmptyString(t_mp.getText()) || !StringUtils.isEmptyString(c_mrt.getText()) 
+                || !StringUtils.isEmptyString(t_mn.getText())) {
+              if(validateMethodAndSetSignature(b_st, b_fn, b_th, c_md, t_mp, c_mrt, t_mn)){
+                //Iterate for every  method impl inside method row 
+                Map<String, Object> obj =  m_methodRowObjects.get(atomicInteger.get());
+                List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) obj.get(METHOD_ROW_IMPL);
+                for(Map<String, Control> map :objImplList){
+                  Text t_dc = (Text)map.get(DEPENDENT_CLASSNAME);
+                  Combo c_m = (Combo)map.get(METHODS);
+                  Text t_dmp = (Text)map.get(DEPENDENT_METHOD_PARAMS);
+                  Combo c_vt = (Combo)map.get(ASSIGN_VARIABLE_TYPES);
+                  Text t_vn = (Text)map.get(ASSIGN_VARIABLE_NAME);
+                  Combo c_a = (Combo)map.get(ASSERTIONS_COMBO);
+                  Text t_avv = (Text)map.get(ASSIGN_VARIABLE_VALUE);
+                  if(!StringUtils.isEmptyString(t_dc.getText()) || !StringUtils.isEmptyString(c_m.getText()) 
+                      || !StringUtils.isEmptyString(t_dmp.getText())  || !StringUtils.isEmptyString(c_vt.getText())  
+                      || !StringUtils.isEmptyString(t_vn.getText()) || !StringUtils.isEmptyString(c_a.getText()) || !StringUtils.isEmptyString(t_avv.getText())){
+                    if(!validateAndSetMethodImpl(t_dc, c_m, t_mp, c_vt, t_vn, c_a, t_avv)){
+                      return;
+                    }
+                  }
+                }
+              }
+              else{
+                return;
+              }
+            }
+          }
+        }
+      }
+    }
     updateStatus(null);
   }
+  
+  private boolean validateAndSetMethodImpl(final Text m_dependentClassNameText, final Combo methods, final Text dependentMethodParamsText,
+      final Combo assignVariableTypes, final Text assignVariableNameText, final Combo assertions, final Text assignVariableValueText) {
+    if(StringUtils.isEmptyString(m_dependentClassNameText.getText())){
+      updateStatus("Class cannot be empty");
+      return false;        
+    } 
+    if(StringUtils.isEmptyString(methods.getText())){
+      updateStatus("Methods cannot be empty");
+      return false;        
+    }
+    
+    if(!StringUtils.isEmptyString(assignVariableTypes.getText()) || !StringUtils.isEmptyString(assignVariableNameText.getText())
+        || !StringUtils.isEmptyString(assignVariableTypes.getText())){
+      if (StringUtils.isEmptyString(assignVariableNameText.getText())) {
+        updateStatus("Assign Variable Name cannot be empty");
+        return false;
+      } else if (StringUtils.isEmptyString(assignVariableTypes.getText())) {
+        updateStatus("Assign Variable Type cannot be empty");
+        return false;
+      } else if (StringUtils.isEmptyString(assignVariableValueText.getText())) {
+        updateStatus("Assign Variable Value cannot be empty");
+        return false;
+      }     
+      
+    }    
+    
+    m_methodImplementation.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
+      put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
+      put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
+      put(DEPENDENT_METHOD_PARAMS, StringUtils.isEmptyString(dependentMethodParamsText.getText())?EMPTY:dependentMethodParamsText.getText());
+      put(ASSIGN_VARIABLE_TYPES, StringUtils.isEmptyString(assignVariableTypes.getText())?EMPTY:assignVariableTypes.getText());
+      put(ASSIGN_VARIABLE_NAME, StringUtils.isEmptyString(assignVariableNameText.getText())?EMPTY:assignVariableNameText.getText());
+      put(ASSIGN_VARIABLE_VALUE, StringUtils.isEmptyString(assignVariableValueText.getText())?EMPTY:assignVariableValueText.getText());
+      put(ASSERTIONS_COMBO, StringUtils.isEmptyString(assertions.getText())?EMPTY:assertions.getText());
+    }}); 
+    methodImplList.add(m_methodImplementation);
+    
+    Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
+    methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);
+    return true;    
+  }
 
+  private boolean validateMethodAndSetSignature(final Button b_static, final Button b_final, final Button b_throws, 
+      final Combo modifierNames, final Text m_methodParamsText, final Combo m_returnTypeText, final Text m_methodNameText){
+    if(StringUtils.isEmptyString(m_returnTypeText.getText())){
+      updateStatus("Method Return Type cannot be empty");
+      return false;        
+    } 
+    if(StringUtils.isEmptyString(m_methodNameText.getText())){
+      updateStatus("Method Name cannot be empty");
+      return false;        
+    }
+    
+    m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, Object> () {{
+      put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
+      put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
+      put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
+      put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
+      put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
+      put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
+      put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
+    }});       
+    return true;
+  }  
+
+  
   private void updateStatus(String message) {
     setErrorMessage(message);
     setPageComplete(message == null);
@@ -475,24 +836,40 @@ public class NewTestNGClassWizardPage extends WizardPage {
   public SelectionAdapter toSelectionAdapter(final Group g, final Composite container){
     return new SelectionAdapter() {
       Group methodImpl ;
+//      Label methodImplmn;
       public void widgetSelected(SelectionEvent e) {
         Button btn = (Button) e.getSource();
         if(btn.getSelection()){    
           if(methodImpl == null){
-            methodImpl = new Group(container, SWT.SHADOW_ETCHED_OUT);
+            
+            methodImpl = new Group(g, SWT.SHADOW_ETCHED_OUT);
             methodImpl.setText("Method Implementation");
             GridData gd = new GridData(GridData.FILL_HORIZONTAL);
             methodImpl.setLayoutData(gd);
+//            gd.verticalSpan = 10;
+            gd.horizontalSpan = 16;
             GridLayout layout = new GridLayout();
             methodImpl.setLayout(layout);
-            layout.numColumns = 15;   
+            layout.numColumns = 16;
+            createTestMethodImplementationSection(methodImpl, container, atomicInteger.get()); 
+            /*
+            methodImplmn = new Label(g, SWT.NULL);
+            methodImplmn.setText("Method Implementation :");
+            GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+            methodImplmn.setLayoutData(gd);
+            gd.horizontalSpan = 15;*/
           }
-          createTestMethodImplementationSection(methodImpl, container);
+//          createTestMethodImplementationSection(methodImpl, container);
+//          createTestMethodImplementationSection(g, container);
           methodImpl.setVisible(true);
           container.layout();
+          g.layout();
         }
         else{
           methodImpl.setVisible(false);
+          container.layout();
+          methodImpl.layout();
+          g.layout();
         }
       }
       
@@ -511,21 +888,24 @@ public class NewTestNGClassWizardPage extends WizardPage {
     };  
   }
   
-  public void createTestMethodImplementationSection(final Group g,
-      final Composite container) {
-    
+  public void createTestMethodImplementationSection(final Group methodImpl,
+      final Composite child, int buttonValue) {
+/*    
     {
       m_dependentClassNameText = SWTUtil.createFileBrowserText(g, container,
           "&Dependent Class Name:", new ModifyListener() {
             public void modifyText(ModifyEvent e) {
               try {
-                dependentClassNameTextChanged(m_dependentClassNameText.getText(), methods);
+                dependentClassNameTextChanged(getJavaClassNameFromFullPath(m_dependentClassNameText.getText()), methods);
               } catch (ClassNotFoundException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
               }
             }
           });
+      GridData gd = (GridData)m_dependentClassNameText.getLayoutData();
+      gd.horizontalSpan = 2;
+      m_dependentClassNameText.setLayoutData(gd);
     }
     
    
@@ -561,11 +941,116 @@ public class NewTestNGClassWizardPage extends WizardPage {
     GridData assertionsGrid = new GridData(GridData.FILL_HORIZONTAL);
     assertions.setLayoutData(assertionsGrid);
     
-    Button addMore = new Button(g, SWT.CHECK);
-    addMore.setText("Add  More Dependency Invocation...");
-    addMore.addSelectionListener(toSelectionAdapter(null, container));
+    Button addMore = new Button(g, SWT.PUSH);
+    addMore.setText("Add More...");
+    addMore.addSelectionListener(toSelectionAdapterForDependencyInvocation(g, container));
+  
+*/    
+  
+    
+    {
+      m_dependentClassNameText = SWTUtil.createFileBrowserText(methodImpl, child,
+          "&ClassName:", new ModifyListener() {
+            public void modifyText(ModifyEvent e) {
+              try {
+                if ((m_dependentClassNameText.getText().contains("/")|| m_dependentClassNameText.getText().contains("."))){
+                  dependentClassNameTextChanged((m_dependentClassNameText.getText()), methods);
+                }
+                dialogChanged();
+              } catch (ClassNotFoundException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+              }
+            }
+          });
+      GridData gd2 = (GridData)m_dependentClassNameText.getLayoutData();
+      gd2.horizontalSpan = 4;
+      m_dependentClassNameText.setLayoutData(gd2);
+      m_dependentClassNameText.setToolTipText("Please Select any Dependent Class Name that needs to be used for method invocation. If not available, create new one using Add Dependency Class");      
+    }
+    
+    Label methodsLabel = new Label(methodImpl, SWT.NULL);
+    methodsLabel.setText("&Methods:");
+    methods = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
+    GridData modifierNameImpl = new GridData(GridData.FILL_HORIZONTAL);
+    methods.setLayoutData(modifierNameImpl);
+
+    Label methodParamsLabel = new Label(methodImpl, SWT.NULL);
+    methodParamsLabel.setText("&Params:");
+    m_dependentMethodParamsText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);
+    m_dependentMethodParamsText.setToolTipText("Please enter Method Parameters if any as comma separated values");
+    m_dependentMethodParamsText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
+
+    Label assignVariablesLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesLabel.setText("&Assign variables:");
+
+    Label assignVariablesTypeLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesTypeLabel.setText("&Type:");
+    assignVariableTypes = new org.eclipse.swt.widgets.Combo(methodImpl,
+        SWT.BORDER | SWT.SINGLE);
+
+    Label assignVariablesNameLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesNameLabel.setText("&Name:");
+    m_assignVariableNameText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);
+    
+    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesValueLabel.setText("&Value:");
+    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);     
+
+    Label assertionsLabel = new Label(methodImpl, SWT.NULL);
+    assertionsLabel.setText("&Assertions:");
+    assertions = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
+    for (String assertion : ASSERTIONS) {
+      assertions.add(assertion);
+    }
+    GridData assertionsGrid = new GridData(GridData.FILL_HORIZONTAL);
+    assertions.setLayoutData(assertionsGrid);
+    
+    Button addMoreImpl = new Button(methodImpl, SWT.PUSH);
+    addMoreImpl.setText("Add More...");
+    addMoreImpl.addSelectionListener(toSelectionAdapterForDependencyInvocation(methodImpl, child));
+    addMoreImpl.setData(atomicInteger.get());
+    
+    m_methodImpl = new HashMap<>();
+    m_methodImpl.put(DEPENDENT_CLASSNAME, m_dependentClassNameText);
+    m_methodImpl.put(METHODS, methods);
+    m_methodImpl.put(DEPENDENT_METHOD_PARAMS, m_dependentMethodParamsText);
+    m_methodImpl.put(ASSIGN_VARIABLE_TYPES, assignVariableTypes);
+    m_methodImpl.put(ASSIGN_VARIABLE_NAME, m_assignVariableNameText);
+    m_methodImpl.put(ASSIGN_VARIABLE_VALUE, m_assignVariableValueText);
+    m_methodImpl.put(ASSERTIONS_COMBO, assertions);
+    m_methodImpl.put(METHOD_ADD_MORE_IMPL, addMoreImpl);
+    
+    Map<String, Object> selObj = m_methodRowObjects.get(buttonValue);
+    List<Map<String, Control>>  selObjImplList = (List<Map<String, Control>>) selObj.get(WizardConstants.METHOD_ROW_IMPL); 
+    selObjImplList.add(m_methodImpl);
     
   }
+  
+  public SelectionAdapter toSelectionAdapterForDependencyInvocation(final Group g, final Composite container){
+    return new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        Button btn = (Button) e.getSource();
+        int incrmValue = (Integer)btn.getData();
+        
+        createTestMethodImplementationSection(g, container, incrmValue); 
+        g.layout();
+        container.layout();
+        
+        Map<String, Object> prevObj =  m_methodRowObjects.get(incrmValue);
+        List<Map<String, Control>>  prevImplList = (List<Map<String, Control>>) prevObj.get(METHOD_ROW_IMPL);        
+        
+        Map<String, Control> prevImplRow = prevImplList.get(prevImplList.size()-2);
+        Button prevImplAddMore = (Button) prevImplRow.get(METHOD_ADD_MORE_IMPL);
+        prevImplAddMore.setVisible(false);  
+      }
+    };    
+  }
+  
   
   public void dependentClassNameTextChanged(String className, Combo methods) throws ClassNotFoundException{
     String fullClassName = getPackageNameFromFullPath(className);
@@ -577,16 +1062,26 @@ public class NewTestNGClassWizardPage extends WizardPage {
       }
     }
   }
-
-  private static String getPackageNameFromFullPath(String className) {
-    int startIndex1 = className.lastIndexOf("src/main/");
-    int startIndex2 = className.lastIndexOf("src/");
-    int lastIndex = className.lastIndexOf(".");
-    int startIndex = (startIndex1 == -1 ? startIndex2 + 4 : startIndex1 + 9);
-    return className.substring(startIndex, lastIndex).replaceAll("/", ".");
-  }
   
-  public static void main(String[] args) {
-    System.out.println(getPackageNameFromFullPath("L/Sample/src/main/com/tdd/demo/TDDDemo.java"));
+  public Map<String, Control> getMethodSignatureRowObjects(){
+    return m_methodSignatureRowObjects;
+  } 
+  
+  public Map<Integer, Map<String, Object>> getMethodSignature(){
+    return m_methodSignature;
+  } 
+  
+  public AtomicInteger getAtomicInteger(){
+    return atomicInteger;
   }
+
+  public AtomicInteger getAtomicIntegerForWritingJavaContent() {
+    return atomicIntegerForWritingJavaContent;
+  }
+
+  public void setAtomicIntegerForWritingJavaContent(
+      AtomicInteger atomicIntegerForWritingJavaContent) {
+    this.atomicIntegerForWritingJavaContent = atomicIntegerForWritingJavaContent;
+  }  
+
 }

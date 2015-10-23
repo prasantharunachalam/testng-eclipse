@@ -14,6 +14,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
@@ -167,4 +168,61 @@ public class SWTUtil {
     });
     return result;
   }  
+  
+  public static Combo createFileBrowserCombo(final Group group, final Composite container, String text,
+      ModifyListener listener) {
+    final Combo result = createCombo(group, text, listener);
+    Button button = new Button(group, SWT.PUSH);
+    button.setText("Browse...");
+    button.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+        ResourceFileSelectionDialog dialog = new ResourceFileSelectionDialog("Return Type Selection", "Select any dependent Java file required for ReturnType", new String[] { "java" });
+        if (dialog.open() == dialog.OK.getCode()) {
+          Object[] res = dialog.getResult();
+          if (res.length >= 1) {
+            result.setText(((File) res[0]).toString().trim());
+          }
+        }
+      }
+    });
+    return result;
+  }  
+  
+  /**
+   * @return a Label+Text.
+   */
+  public static Combo createCombo(Composite container, String text, ModifyListener listener) {
+    Label label = new Label(container, SWT.NULL);
+    label.setText(text);      
+    final Combo result = new Combo(container, SWT.BORDER | SWT.SINGLE);
+    GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 3;
+    result.setLayoutData(gd);
+    if (listener != null) result.addModifyListener(listener);
+    return result;
+  }  
+  
+  public static String getJavaClassNameFromFullPath(String source){
+      int startIndex = source.lastIndexOf("/");
+      int lastIndex = source.lastIndexOf(".");
+//    if (!(startIndex == -1 || lastIndex == -1)){
+      return source.substring(startIndex + 1, lastIndex);
+//    }
+//    return source;w
+  }
+  
+  public static String getJavaPackageNameFromFullPath(String source){
+    int startIndex = source.lastIndexOf("src/");
+    int lastIndex = source.lastIndexOf("/");
+    return source.substring(startIndex+1, lastIndex).replaceAll("/", ".");
+  }  
+  
+  public static String getPackageNameFromFullPath(String className) {
+    int startIndex1 = className.lastIndexOf("src/main/");
+    int startIndex2 = className.lastIndexOf("src/");
+    int lastIndex = className.lastIndexOf(".");
+    int startIndex = (startIndex1 == -1 ? startIndex2 + 4 : startIndex1 + 9);
+    return className.substring(startIndex, lastIndex).replaceAll("/", ".");
+  }  
+  
 }

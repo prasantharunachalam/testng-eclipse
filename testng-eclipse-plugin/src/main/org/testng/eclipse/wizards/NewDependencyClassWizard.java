@@ -135,19 +135,21 @@ public class NewDependencyClassWizard extends Wizard implements INewWizard {
 	  Map<Integer, Map<String, String>> map =  m_page.getMethodSignature();
 	  for(int i = 1 ; i <= m_page.getAtomicInteger().get(); i++){
 	    Map<String, String> obj = map.get(i);
-      methods.append("\n"
-          + obj.get(METHOD_MODIFIER)+SPACE
-          + obj.get(METHOD_STATIC)+SPACE
-          + obj.get(METHOD_FINAL)+SPACE
-          +obj.get(METHOD_RETURN_TYPE)+ SPACE
-          + obj.get(METHOD_NAME)+SPACE
-          + OPEN_BRACE  +SPACE
-          + obj.get(METHOD_PARAMS_TYPE)+SPACE
-          + CLOSE_BRACE +SPACE   
-          + obj.get(METHOD_THROWS_CLAUSE)+SPACE
-          + " {\n"
-          + "    throw new RuntimeException(\"Method not implemented\");\n"
-          + "  }\n");	    
+	    if(obj != null){
+        methods.append("\n"
+            + obj.get(METHOD_MODIFIER)+SPACE
+            + obj.get(METHOD_STATIC)+SPACE
+            + obj.get(METHOD_FINAL)+SPACE
+            +obj.get(METHOD_RETURN_TYPE)+ SPACE
+            + obj.get(METHOD_NAME)+SPACE
+            + OPEN_BRACE  +SPACE
+            + obj.get(METHOD_PARAMS_TYPE)+SPACE
+            + CLOSE_BRACE +SPACE   
+            + obj.get(METHOD_THROWS_CLAUSE)+SPACE
+            + " {\n"
+            + "    throw new RuntimeException(\"Method not implemented\");\n"
+            + "  }\n");	    
+	    }
 	  }
 /*	  
 	  for (IMethod m : testMethods) {

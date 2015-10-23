@@ -1,10 +1,25 @@
 package org.testng.eclipse.wizards;
 
+import static org.testng.eclipse.wizards.WizardConstants.CLOSE_BRACE;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_FINAL;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_MODIFIER;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_NAME;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_PARAMS_TYPE;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_RETURN_TYPE;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_STATIC;
+import static org.testng.eclipse.wizards.WizardConstants.METHOD_THROWS_CLAUSE;
+import static org.testng.eclipse.wizards.WizardConstants.OPEN_BRACE;
+import static org.testng.eclipse.wizards.WizardConstants.SPACE;
+import static org.testng.eclipse.wizards.WizardConstants.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.google.common.collect.Sets;
@@ -23,10 +38,12 @@ import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWizard;
+import org.testng.collections.CollectionUtils;
 import org.testng.eclipse.ui.util.Utils;
 import org.testng.eclipse.util.StringUtils;
 import org.testng.eclipse.util.SuiteGenerator;
 import org.testng.eclipse.util.Utils.JavaElement;
+import static org.testng.eclipse.util.SWTUtil.*;
 
 /**
  * The wizard that creates a new TestNG class. This wizard looks at the current
@@ -166,6 +183,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
 	  StringBuilder methods = new StringBuilder();
 	  String dataProvider = "";
 	  String signature = "()";
+	  List<String> importPackages = new ArrayList<>();
 
 	  //
 	  // Configuration methods
@@ -186,6 +204,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
               ;
             signature = "(Integer n, String s)";
 	      } else {
+	        //TODO comment this out
   	      methods.append("  @" + a  + "\n"
   	          + "  public void " + toMethod(a) + "() {\n"
   	          + "  }\n\n"
@@ -212,7 +231,90 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
           + "    throw new RuntimeException(\"Test not implemented\");\n"
           + "  }\n");
     }
+    
+    //Test Methods
+    Map<Integer, Map<String, Object>> map =  m_page.getMethodSignature();
+    for(int i = 1 ; i <= m_page.getAtomicIntegerForWritingJavaContent().get(); i++){
+      Map<String, Object> obj = map.get(i);
+      if(obj != null){
+        List<Map<String, Map<String, String>>> methodImplList = (List<Map<String, Map<String, String>>>) obj.get(METHOD_IMPLEMENTATION_LIST);
+        boolean hasElements = CollectionUtils.hasElements(methodImplList);
+        methods.append("\n"
+            + obj.get(METHOD_MODIFIER)+SPACE
+            + obj.get(METHOD_STATIC)+SPACE
+            + obj.get(METHOD_FINAL)+SPACE
+            +obj.get(METHOD_RETURN_TYPE)+ SPACE
+            + obj.get(METHOD_NAME)+SPACE
+            + OPEN_BRACE  +SPACE
+            + obj.get(METHOD_PARAMS_TYPE)+SPACE
+            + CLOSE_BRACE +SPACE   
+            + obj.get(METHOD_THROWS_CLAUSE)+SPACE
+            );
+        if(hasElements){
+          methods.append(" {\n" );
+          for(Map<String, Map<String, String>> lstEntry : methodImplList){
+            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION);
+            String depClassName = invocation.get(DEPENDENT_CLASSNAME);
+            String method = invocation.get(METHODS);
+            String methodParam = invocation.get(DEPENDENT_METHOD_PARAMS);
+            String assignVarType = invocation.get(ASSIGN_VARIABLE_TYPES);
+            String assignVarName = invocation.get(ASSIGN_VARIABLE_NAME);
+            String assignVarValue = invocation.get(ASSIGN_VARIABLE_VALUE);
+            String assertion = invocation.get(ASSERTIONS_COMBO);
+            String packageName = getPackageNameFromFullPath(depClassName);
+            importPackages.add(packageName);
+            String javaClassName = getJavaClassNameFromFullPath(depClassName);
+            if(!StringUtils.isEmptyString(assignVarType)){
+              methods.append(assignVarType + EQUALS);
+            }  
+            if(!StringUtils.isEmptyString(assignVarName)){
+              methods.append(assignVarName);
+            }    
+            String methodInvoke = javaClassName+DOT+method;
+            methods.append(TAB+methodInvoke);
+            methods.append(OPEN_BRACE);
+            if(!StringUtils.isEmptyString(methodParam)){
+              methods.append(methodParam);
+            }
+            methods.append(CLOSE_BRACE + COLON);
+            boolean assign = !StringUtils.isEmptyString(assignVarName);
+            if(!StringUtils.isEmptyString(assertion)){
+              switch (assertion) {
+              case DISPLAY_ASSERT_EQUALS:
+                methods.append(TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE);
+                break;
+                
+              case DISPLAY_ASSERT_NON_EQUALS:
+                methods.append(TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE);
+                break;
+                
+              case DISPLAY_ASSERT_NULL:
+                methods.append(TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE);
+                break;
+                
+              case DISPLAY_ASSERT_NOTNULL:
+                methods.append(TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE);
+                break;   
+                
+              }
+            }    
+          }
+          methods.append(" \n  }\n" );
+        }
+        else{
+          methods.append(
+                   " {\n"
+                  + "    throw new RuntimeException(\"Test not implemented\");\n"
+                  + "  }\n");  
+        }
+      }
+    }    
 
+    //Add Imports
+    for(String pkg : importPackages){
+      imports.append( "import "+pkg + ";\n");
+    }
+    
     String contents =
 	      "package " + m_page.getPackage() + ";\n\n"
 	      + imports

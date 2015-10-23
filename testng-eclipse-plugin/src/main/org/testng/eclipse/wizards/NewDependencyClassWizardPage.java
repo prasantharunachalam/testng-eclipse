@@ -10,6 +10,7 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.dialogs.IDialogPage;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -17,7 +18,9 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -35,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.testng.eclipse.wizards.WizardConstants.*;
+import static org.testng.eclipse.util.SWTUtil.getJavaClassNameFromFullPath;
 /**
  * Generate a new TestNG class and optionally, the corresponding XML suite file.
  */
@@ -54,8 +58,10 @@ public class NewDependencyClassWizardPage extends WizardPage {
   public static final String[] MODIFIERS = new String[] {
       "public", "private", "protected", "package"
     }; 
-  private Map<Integer, Map<String, String>> m_methodSignature = new HashMap<>();  
+  private Map<Integer, Map<String, String>> m_methodSignature = new HashMap<>();
+  private Map<Integer, Map<String, Control>> m_methodSignatureRowObjects = new HashMap<>();  
   private AtomicInteger atomicInteger = new AtomicInteger(1);
+  private AtomicInteger atomicIntegerForWritingJavaContent = new AtomicInteger(0);
   private Button b_static;
   private Button b_final;
   private Button b_throws;
@@ -145,15 +151,25 @@ public class NewDependencyClassWizardPage extends WizardPage {
 
   private void createMethod(Composite parent) {
     {
-      createTestGroupSection(parent);
+      ScrolledComposite  container = new ScrolledComposite (parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+      container.setExpandHorizontal(true);
+      container.setExpandVertical(true);     
+      Group methodSection = createMethodsGroupSection(parent, container);
+      container.setContent(methodSection);
+      methodSection.setSize(methodSection.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+      //container.setAlwaysShowScrollBars(true);
+      //not sure about this line, was optional in my case
+      container.setMinSize(methodSection.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+//      container.setMinSize(100,100);
+      container.setRedraw(true);
     }
     
   }
   
-  private Composite createTestGroupSection(final Composite parent){
+  private Group createMethodsGroupSection(final Composite source, final ScrolledComposite parent){
     
     Group g = new Group(parent, SWT.SHADOW_ETCHED_OUT);
-    g.setText("Method Signature");  
+    g.setText("Methods Signature");  
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
     //gd.verticalSpan = 2;      
@@ -161,15 +177,21 @@ public class NewDependencyClassWizardPage extends WizardPage {
     
     GridLayout layout = new GridLayout();
     g.setLayout(layout);
-    layout.numColumns = 16;     
+    layout.numColumns = 19;     
     
+    createMethodSignatureElements(g, source, parent);
+    return g;
+   
+  }  
+  
+  private void createMethodSignatureElements(final Group g, final Composite source, final ScrolledComposite parent){
     b_static = new Button(g, SWT.CHECK);
     b_static.setText("static");
     b_static.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
           dialogChanged();
       }
-    });    
+    });
     
     b_final = new Button(g, SWT.CHECK);
     b_final.setText("final");    
@@ -188,15 +210,15 @@ public class NewDependencyClassWizardPage extends WizardPage {
     }
     GridData modifierName = new GridData(GridData.FILL_HORIZONTAL);
     modifierNames.setLayoutData(modifierName);  
-    modifierNames.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
+    modifierNames.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
         dialogChanged();
       }
     });       
     
+    /*
     Label label2 = new Label(g, SWT.NULL);
     label2.setText("&ReturnType:");  
-//    m_returnTypeText = new Text(g, SWT.BORDER | SWT.SINGLE);  
     m_returnTypeText = new org.eclipse.swt.widgets.Combo(g,
         SWT.BORDER | SWT.SINGLE);  
     m_returnTypeText.setToolTipText("Please select any of the below Method Return types. If not available, type any valid customType");
@@ -210,13 +232,24 @@ public class NewDependencyClassWizardPage extends WizardPage {
       public void modifyText(ModifyEvent e) {
         dialogChanged();
       }
-    });    
+    }); 
+    */
+    m_returnTypeText = SWTUtil.createFileBrowserCombo(g, source, "&ReturnType:", new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        m_returnTypeText.setText(getJavaClassNameFromFullPath(m_returnTypeText.getText()));
+        dialogChanged();
+      }
+    });
+    m_returnTypeText.setToolTipText("Please select any of the below Method Return types. If not available, select any Java Type by clicking Browse");
+    for(String returnType : RETURN_TYPES){
+      m_returnTypeText.add(returnType);  
+    }  
     
     Label label3 = new Label(g, SWT.NULL);
     label3.setText("&MethodName:");  
     m_methodNameText = new Text(g, SWT.BORDER | SWT.SINGLE);
     GridData methodGrid = new GridData(GridData.FILL_HORIZONTAL);
-    methodGrid.horizontalSpan = 2;
+    methodGrid.horizontalSpan = 3;
     m_methodNameText.setLayoutData(methodGrid);
     m_methodNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -228,7 +261,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
     label4.setText("&MethodParams:");   
     m_methodParamsText = new Text(g, SWT.BORDER | SWT.SINGLE);
     GridData methodParamsGrid = new GridData(GridData.FILL_HORIZONTAL);
-    methodParamsGrid.horizontalSpan = 2;
+    methodParamsGrid.horizontalSpan = 3;
     m_methodParamsText.setLayoutData(methodParamsGrid);  
     m_methodParamsText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -244,18 +277,38 @@ public class NewDependencyClassWizardPage extends WizardPage {
       }
     });       
     
-    Button addMore = new Button(g, SWT.PUSH);
-    addMore.setText("Add More Method...");
+    final Button addMore = new Button(g, SWT.PUSH);
+    addMore.setText("Add More...");
     addMore.addSelectionListener(new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
-        createMethod(parent);
-        parent.layout();
+//        Group g = createMethodsGroupSection(source, parent);
+//        parent.setExpandVertical(true);parent.setExpandHorizontal(true);parent.setRedraw(true);
+//        parent.setContent(g);
         atomicInteger.addAndGet(1);
+        createMethodSignatureElements(g,source, parent);
+        parent.layout();
+        source.layout();
+        
+        //set button add more invisible for pervious row
+        Map<String, Control> prevRow = m_methodSignatureRowObjects.get(atomicInteger.get()-1);
+        Button prevAddMore = (Button)prevRow.get(METHOD_ADD_MORE);
+        prevAddMore.setVisible(false);
+        
       }
       
     });
-    return parent;
-  }  
+      m_methodSignatureRowObjects.put(atomicInteger.get(), new HashMap<String, Control> () {{
+        put(METHOD_STATIC, b_static);
+        put(METHOD_FINAL, b_final);
+        put(METHOD_MODIFIER, modifierNames);
+        put(METHOD_RETURN_TYPE, m_returnTypeText);
+        put(METHOD_NAME, m_methodNameText);
+        put(METHOD_PARAMS_TYPE, m_methodParamsText);
+        put(METHOD_THROWS_CLAUSE, b_throws);
+        put(METHOD_ADD_MORE, addMore);
+      }});
+       
+  }
   
   /**
    * Tests if the current workbench selection is a suitable container to use.
@@ -340,21 +393,40 @@ public class NewDependencyClassWizardPage extends WizardPage {
       }
     }
     //validations for method signature
+    int hitsForAddMoreMethods = getAtomicInteger().get();
     if(b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
         || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
         || !StringUtils.isEmptyString(m_methodNameText.getText())) {
-      if(!validateAndSetMethodSignature())
+      if(!validateAndSetMethodSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText))
         return;
     }
-    /*
-    else if(!StringUtils.isEmptyString(m_returnTypeText.getText()) || !StringUtils.isEmptyString(m_methodNameText.getText())){
-      validateAndSetMethodSignature();
+    else{
+      if(hitsForAddMoreMethods > 1){
+        for(int i = 1 ; i <= getAtomicInteger().get(); i++){
+          Map<String, Control> obj = m_methodSignatureRowObjects.get(i);
+          if(obj != null){
+            Button b_st = (Button)obj.get(METHOD_STATIC);
+            Button b_fn = (Button)obj.get(METHOD_FINAL);
+            Combo c_md = (Combo)obj.get(METHOD_MODIFIER);
+            Combo c_rt = (Combo)obj.get(METHOD_RETURN_TYPE);
+            Text t_mn = (Text)obj.get(METHOD_NAME);
+            Text t_mp = (Text)obj.get(METHOD_PARAMS_TYPE);
+            Button b_th = (Button)obj.get(METHOD_THROWS_CLAUSE);
+            if(b_st.getSelection() || b_fn.getSelection() || b_th.getSelection() || !StringUtils.isEmptyString(c_md.getText()) 
+                || !StringUtils.isEmptyString(t_mp.getText()) || !StringUtils.isEmptyString(c_rt.getText()) 
+                || !StringUtils.isEmptyString(t_mn.getText())) {
+              if(!validateAndSetMethodSignature(b_st, b_fn, b_th, c_md, t_mp, c_rt, t_mn))
+                return;            
+            }
+          }
+        }
+      }
     }
-    */
     updateStatus(null);
   }
   
-  private boolean validateAndSetMethodSignature(){
+  private boolean validateAndSetMethodSignature(final Button b_static, final Button b_final, final Button b_throws, 
+      final Combo modifierNames, final Text m_methodParamsText, final Combo m_returnTypeText, final Text m_methodNameText){
     if(StringUtils.isEmptyString(m_returnTypeText.getText())){
       updateStatus("Method Return Type cannot be empty");
       return false;        
@@ -364,14 +436,14 @@ public class NewDependencyClassWizardPage extends WizardPage {
       return false;        
     }
     
-    m_methodSignature.put(atomicInteger.get(), new HashMap<String, String> () {{
+    m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, String> () {{
       put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
       put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
       put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
       put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
       put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
       put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
-      put(METHOD_MODIFIER, PACKAGE.equals(modifierNames.getText())?EMPTY:modifierNames.getText());
+      put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
     }});    
     
     return true;
@@ -417,6 +489,10 @@ public class NewDependencyClassWizardPage extends WizardPage {
   public Map<Integer, Map<String, String>> getMethodSignature(){
     return m_methodSignature;
   }
+  
+  public Map<Integer, Map<String, Control>> getMethodSignatureRowObjects(){
+    return m_methodSignatureRowObjects;
+  }  
   
   public AtomicInteger getAtomicInteger(){
     return atomicInteger;
