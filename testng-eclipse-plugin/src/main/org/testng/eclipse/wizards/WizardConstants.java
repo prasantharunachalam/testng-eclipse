@@ -63,9 +63,13 @@ public class WizardConstants {
   public static final String TESTNG_ASSERT_NON_EQUALS = "assertNotEquals";
   public static final String TESTNG_ASSERT_NULL = "assertNull";
   public static final String TESTNG_ASSERT_NOTNULL = "assertNotNull";
+  public static final String TESTNG_ASSERT_TRUE = "assertTrue";
+  public static final String TESTNG_ASSERT_FALSE = "assertFalse";
   
   public static final String DISPLAY_ASSERT_EQUALS = "Assert Equals";
   public static final String DISPLAY_ASSERT_NON_EQUALS = "Assert NonEquals";
   public static final String DISPLAY_ASSERT_NULL = "Assert Null";
-  public static final String DISPLAY_ASSERT_NOTNULL = "Assert NotNull";  
+  public static final String DISPLAY_ASSERT_NOTNULL = "Assert NotNull";
+  public static final String DISPLAY_ASSERT_TRUE = "Assert True";
+  public static final String DISPLAY_ASSERT_FALSE = "Assert False";    
 }

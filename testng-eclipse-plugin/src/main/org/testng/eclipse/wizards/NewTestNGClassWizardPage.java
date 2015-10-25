@@ -79,7 +79,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
   private org.eclipse.swt.widgets.Combo assertions;
   public static final String[] ASSERTIONS = new String[] {
       DISPLAY_ASSERT_EQUALS, DISPLAY_ASSERT_NON_EQUALS,
-      DISPLAY_ASSERT_NULL, DISPLAY_ASSERT_NOTNULL
+      DISPLAY_ASSERT_NULL, DISPLAY_ASSERT_NOTNULL,
+      DISPLAY_ASSERT_TRUE, DISPLAY_ASSERT_FALSE
     };   
 
   private Map<String, Button> m_annotations = new HashMap<String, Button>();
@@ -521,10 +522,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
       }
     }); 
     
-    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
-    assignVariablesValueLabel.setText("&Value:");
-    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);    
-
     Label assertionsLabel = new Label(methodImpl, SWT.NULL);
     assertionsLabel.setText("&Assertions:");
     assertions = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
@@ -538,6 +535,15 @@ public class NewTestNGClassWizardPage extends WizardPage {
         dialogChanged();
       }
     });    
+    
+    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesValueLabel.setText("&Value:");
+    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);   
+    m_assignVariableValueText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });      
     
     Button addMoreImpl = new Button(methodImpl, SWT.PUSH);
     addMoreImpl.setText("Add More...");
@@ -694,7 +700,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
         for(int i = 1 ; i <= getAtomicInteger().get(); i++){
           Map<String, Object> rowObj = m_methodRowObjects.get(i);
           Map<String, Control> methodSign = (Map<String, Control>) rowObj.get(METHOD_ROW_SIGNATURE);
-          if(rowObj != null){
+          if(methodSign != null){
             Button b_st = (Button)methodSign.get(METHOD_STATIC);
             Button b_fn = (Button)methodSign.get(METHOD_FINAL);
             Combo c_md = (Combo)methodSign.get(METHOD_MODIFIER);
@@ -748,21 +754,27 @@ public class NewTestNGClassWizardPage extends WizardPage {
       return false;        
     }
     
-    if(!StringUtils.isEmptyString(assignVariableTypes.getText()) || !StringUtils.isEmptyString(assignVariableNameText.getText())
-        || !StringUtils.isEmptyString(assignVariableTypes.getText())){
+    if (!StringUtils.isEmptyString(assignVariableTypes.getText())
+        || !StringUtils.isEmptyString(assignVariableNameText.getText())) {
       if (StringUtils.isEmptyString(assignVariableNameText.getText())) {
         updateStatus("Assign Variable Name cannot be empty");
         return false;
       } else if (StringUtils.isEmptyString(assignVariableTypes.getText())) {
         updateStatus("Assign Variable Type cannot be empty");
         return false;
-      } else if (StringUtils.isEmptyString(assignVariableValueText.getText())) {
-        updateStatus("Assign Variable Value cannot be empty");
-        return false;
-      }     
-      
-    }    
+      }
+    }
     
+    if (!StringUtils.isEmptyString(assertions.getText())) {
+      if (DISPLAY_ASSERT_EQUALS.equals(assertions.getText())
+          || DISPLAY_ASSERT_NON_EQUALS.equals(assertions.getText())) {
+        if (StringUtils.isEmptyString(assignVariableValueText.getText())) {
+          updateStatus("Assertion Value(Assert Equals/Assert NonEquals) cannot be empty");
+          return false;
+        }
+      }
+    }
+ /*   
     m_methodImplementation.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
       put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
       put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
@@ -776,6 +788,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
     
     Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
     methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);
+    */
     return true;    
   }
 
@@ -789,7 +802,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
       updateStatus("Method Name cannot be empty");
       return false;        
     }
-    
+    /*
     m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, Object> () {{
       put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
       put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
@@ -798,10 +811,72 @@ public class NewTestNGClassWizardPage extends WizardPage {
       put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
       put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
       put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
-    }});       
+    }}); 
+    */      
     return true;
   }  
 
+  public void setMethodSignatureAndImpl(){
+    //iterate methodrow object pick up the user selected rows and iterate impls if available, then populate row and its impls one by one
+    
+    for(int i = 1; i <= m_methodRowObjects.size(); i++){
+      Map<String, Object> rowObj = m_methodRowObjects.get(i);
+      Map<String, Control> methodSign = (Map<String, Control>) rowObj.get(METHOD_ROW_SIGNATURE); 
+
+      final Button b_static = (Button)methodSign.get(METHOD_STATIC);
+      final Button b_final = (Button)methodSign.get(METHOD_FINAL);
+      final Combo modifierNames = (Combo)methodSign.get(METHOD_MODIFIER);
+      final Combo m_returnTypeText = (Combo)methodSign.get(METHOD_RETURN_TYPE);
+      final Text m_methodNameText = (Text)methodSign.get(METHOD_NAME);
+      final Text m_methodParamsText = (Text)methodSign.get(METHOD_PARAMS_TYPE);
+      final Button b_throws = (Button)methodSign.get(METHOD_THROWS_CLAUSE);   
+      
+      if(!StringUtils.isEmptyString(m_returnTypeText.getText()) && !StringUtils.isEmptyString(m_methodNameText.getText())) {
+          //method signature for 1st method...
+          m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, Object> () {{
+            put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
+            put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
+            put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
+            put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
+            put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
+            put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
+            put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
+          }}); 
+      
+          //Iterate for every  method impl inside method row 
+          List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
+      
+          for(Map<String, Control> map :objImplList){
+            final Text m_dependentClassNameText = (Text)map.get(DEPENDENT_CLASSNAME);
+            final Combo methods = (Combo)map.get(METHODS);
+            final Text dependentMethodParamsText = (Text)map.get(DEPENDENT_METHOD_PARAMS);
+            final Combo assignVariableTypes = (Combo)map.get(ASSIGN_VARIABLE_TYPES);
+            final Text assignVariableNameText = (Text)map.get(ASSIGN_VARIABLE_NAME);
+            final Combo assertions = (Combo)map.get(ASSERTIONS_COMBO);
+            final Text assignVariableValueText = (Text)map.get(ASSIGN_VARIABLE_VALUE);
+            
+              if(!StringUtils.isEmptyString(m_dependentClassNameText.getText()) && !StringUtils.isEmptyString(methods.getText())) {
+                //impl present for 1st method....
+                m_methodImplementation.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
+                  put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
+                  put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
+                  put(DEPENDENT_METHOD_PARAMS, StringUtils.isEmptyString(dependentMethodParamsText.getText())?EMPTY:dependentMethodParamsText.getText());
+                  put(ASSIGN_VARIABLE_TYPES, StringUtils.isEmptyString(assignVariableTypes.getText())?EMPTY:assignVariableTypes.getText());
+                  put(ASSIGN_VARIABLE_NAME, StringUtils.isEmptyString(assignVariableNameText.getText())?EMPTY:assignVariableNameText.getText());
+                  put(ASSIGN_VARIABLE_VALUE, StringUtils.isEmptyString(assignVariableValueText.getText())?EMPTY:assignVariableValueText.getText());
+                  put(ASSERTIONS_COMBO, StringUtils.isEmptyString(assertions.getText())?EMPTY:assertions.getText());
+                }}); 
+                methodImplList.add(m_methodImplementation);
+                
+                Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
+                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);            
+              }
+          }      
+      }
+      
+    }
+   
+  }
   
   private void updateStatus(String message) {
     setErrorMessage(message);
@@ -974,6 +1049,11 @@ public class NewTestNGClassWizardPage extends WizardPage {
     methods = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
     GridData modifierNameImpl = new GridData(GridData.FILL_HORIZONTAL);
     methods.setLayoutData(modifierNameImpl);
+    methods.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });      
 
     Label methodParamsLabel = new Label(methodImpl, SWT.NULL);
     methodParamsLabel.setText("&Params:");
@@ -996,11 +1076,12 @@ public class NewTestNGClassWizardPage extends WizardPage {
     Label assignVariablesNameLabel = new Label(methodImpl, SWT.NULL);
     assignVariablesNameLabel.setText("&Name:");
     m_assignVariableNameText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);
+    m_assignVariableNameText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
     
-    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
-    assignVariablesValueLabel.setText("&Value:");
-    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);     
-
     Label assertionsLabel = new Label(methodImpl, SWT.NULL);
     assertionsLabel.setText("&Assertions:");
     assertions = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
@@ -1009,6 +1090,20 @@ public class NewTestNGClassWizardPage extends WizardPage {
     }
     GridData assertionsGrid = new GridData(GridData.FILL_HORIZONTAL);
     assertions.setLayoutData(assertionsGrid);
+    assertions.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });    
+    
+    Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
+    assignVariablesValueLabel.setText("&Value:");
+    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);  
+    m_assignVariableValueText.addModifyListener(new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        dialogChanged();
+      }
+    });     
     
     Button addMoreImpl = new Button(methodImpl, SWT.PUSH);
     addMoreImpl.setText("Add More...");

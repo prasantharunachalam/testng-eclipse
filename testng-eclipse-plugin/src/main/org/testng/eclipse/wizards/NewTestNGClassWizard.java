@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,6 +93,9 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
 	 */
 	@Override
   public boolean performFinish() {
+	  //set Map for method ui controls with impl
+	  m_page.setMethodSignatureAndImpl();
+	  
 		String containerName = m_page.getSourceFolder();
 		String className = m_page.getClassName();
 		String packageName = m_page.getPackageName();
@@ -183,7 +187,8 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
 	  StringBuilder methods = new StringBuilder();
 	  String dataProvider = "";
 	  String signature = "()";
-	  List<String> importPackages = new ArrayList<>();
+	  Set<String> importPackages = new HashSet<>();
+	  int assertCount = 0;
 
 	  //
 	  // Configuration methods
@@ -239,16 +244,24 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
       if(obj != null){
         List<Map<String, Map<String, String>>> methodImplList = (List<Map<String, Map<String, String>>>) obj.get(METHOD_IMPLEMENTATION_LIST);
         boolean hasElements = CollectionUtils.hasElements(methodImplList);
+        String methodModifier = (String) obj.get(METHOD_MODIFIER);
+        String methodStatic = (String) obj.get(METHOD_STATIC);
+        String methodFinal = (String) obj.get(METHOD_FINAL);
+        String methodReturnType = (String) obj.get(METHOD_RETURN_TYPE);
+        String methodName = (String) obj.get(METHOD_NAME);
+        String methodParamsType = (String) obj.get(METHOD_PARAMS_TYPE);
+        String methodThrows = (String) obj.get(METHOD_THROWS_CLAUSE);        
         methods.append("\n"
-            + obj.get(METHOD_MODIFIER)+SPACE
-            + obj.get(METHOD_STATIC)+SPACE
-            + obj.get(METHOD_FINAL)+SPACE
-            +obj.get(METHOD_RETURN_TYPE)+ SPACE
-            + obj.get(METHOD_NAME)+SPACE
+            + TAB + TAB
+            + ((!StringUtils.isEmptyString(methodModifier))?methodModifier+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodStatic))?methodStatic+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodFinal))?methodFinal+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodReturnType))?methodReturnType+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodName))?methodName+SPACE:EMPTY)
             + OPEN_BRACE  +SPACE
-            + obj.get(METHOD_PARAMS_TYPE)+SPACE
-            + CLOSE_BRACE +SPACE   
-            + obj.get(METHOD_THROWS_CLAUSE)+SPACE
+            + ((!StringUtils.isEmptyString(methodParamsType))?methodParamsType+SPACE:EMPTY)
+            + CLOSE_BRACE +SPACE
+            + ((!StringUtils.isEmptyString(methodThrows))?methodThrows+SPACE:EMPTY)
             );
         if(hasElements){
           methods.append(" {\n" );
@@ -264,42 +277,49 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             String packageName = getPackageNameFromFullPath(depClassName);
             importPackages.add(packageName);
             String javaClassName = getJavaClassNameFromFullPath(depClassName);
-            if(!StringUtils.isEmptyString(assignVarType)){
-              methods.append(assignVarType + EQUALS);
-            }  
+            boolean isAssert = !StringUtils.isEmptyString(assertion);
+            String methodInvoke = javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
+              
             if(!StringUtils.isEmptyString(assignVarName)){
-              methods.append(assignVarName);
-            }    
-            String methodInvoke = javaClassName+DOT+method;
-            methods.append(TAB+methodInvoke);
-            methods.append(OPEN_BRACE);
-            if(!StringUtils.isEmptyString(methodParam)){
-              methods.append(methodParam);
-            }
-            methods.append(CLOSE_BRACE + COLON);
+              methods.append(TAB+TAB+TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
+            }             
             boolean assign = !StringUtils.isEmptyString(assignVarName);
-            if(!StringUtils.isEmptyString(assertion)){
+            if(isAssert){
+              assertCount++;
               switch (assertion) {
               case DISPLAY_ASSERT_EQUALS:
-                methods.append(TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE);
+                methods.append(TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
                 break;
                 
               case DISPLAY_ASSERT_NON_EQUALS:
-                methods.append(TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE);
+                methods.append(TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NULL:
-                methods.append(TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE);
+                methods.append(TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NOTNULL:
-                methods.append(TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE);
-                break;   
+                methods.append(TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
+                break;  
+                
+              case DISPLAY_ASSERT_TRUE:
+                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                break;  
+                
+              case DISPLAY_ASSERT_FALSE:
+                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                break;                  
                 
               }
-            }    
+            }  
+            else{
+              if(StringUtils.isEmptyString(assignVarName)){
+                methods.append(TAB+TAB+methodInvoke + COLON);
+              }
+            }
           }
-          methods.append(" \n  }\n" );
+          methods.append(" \n  }\n\n" );
         }
         else{
           methods.append(
@@ -314,6 +334,9 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
     for(String pkg : importPackages){
       imports.append( "import "+pkg + ";\n");
     }
+    if(assertCount > 0){
+      imports.append( "import static org.testng.Assert.*;\n");
+    }
     
     String contents =
 	      "package " + m_page.getPackage() + ";\n\n"
@@ -322,7 +345,8 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
 	      + "public class " + className + " {\n"
 	      ;
 
-    if (testMethods.size() == 0 || ! StringUtils.isEmptyString(dataProvider)) {
+    //testMethods.size() == 0 || 
+    if (! StringUtils.isEmptyString(dataProvider)) {
       contents +=
           "  @Test" + dataProvider + "\n"
   	      + "  public void f" + signature + " {\n"
