@@ -47,11 +47,12 @@
   </extension>
   <extension
          point="org.eclipse.debug.core.launchConfigurationTypes">
+         <!-- name="TestNG"  -->
       <launchConfigurationType
             delegate="org.testng.eclipse.launch.TestNGLaunchConfigurationDelegate"
             id="org.testng.eclipse.launchconfig"
             modes="run,debug"
-            name="TestNG"
+            name="TDD"  
             sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
             sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
       </launchConfigurationType>
@@ -59,27 +60,30 @@
 
   <extension
          point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+         <!-- icon=icons/full/main16/testng.gif -->
       <launchConfigurationTypeImage
             configTypeID="org.testng.eclipse.launchconfig"
-            icon="icons/full/main16/testng.gif"
+            icon="icons/full/main16/tdd_logo_medium.gif" 
             id="org.testng.eclipse.launchimage"/>
   </extension>
 
   <extension
          point="org.eclipse.ui.views">
+         <!-- icon="icons/full/main16/testng_blur.gif"-->
       <view
             category="org.eclipse.jdt.ui.java"
             class="org.testng.eclipse.ui.TestRunnerViewPart"
-            icon="icons/full/main16/testng_blur.gif"
+            icon="icons/full/main16/tdd_logo_medium.gif"
             id="org.testng.eclipse.ResultView"
             name="%TestNG4Eclipse.ResultView"/>
   </extension>
 
   <extension
          point="org.eclipse.debug.ui.launchShortcuts">
+         <!-- icon="icons/full/main16/testng.gif" -->
       <shortcut
             class="org.testng.eclipse.launch.TestNGLaunchShortcut"
-            icon="icons/full/main16/testng.gif"
+            icon="icons/full/main16/tdd_logo_medium.gif"
             id="org.testng.eclipse.shortcut"
             label="%TestNGShortcut.test.label"
             modes="run,debug">
@@ -148,10 +152,11 @@
   <!-- Project specific properties -->
   <extension
          point="org.eclipse.ui.propertyPages">
+         <!-- name="TestNG" -->
       <page
             class="org.testng.eclipse.ui.preferences.ProjectPropertyPage"
             id="org.testng.eclipse.properties.propertyPage1"
-            name="TestNG">
+            name="TDD">
          <enabledWhen>
             <and>
                <adapt
@@ -270,7 +275,7 @@
       <page
             class="org.testng.eclipse.ui.preferences.WorkspacePreferencePage"
             id="org.testng.eclipse.ui.preferences.PreferencePage"
-            name="TestNG"/>
+            name="TDD"/><!-- TestNG -->
       <page
             class="org.testng.eclipse.ui.preferences.RunDebugPreferencePage"
             id="org.testng.eclipse.ui.preferences.RunDebugPreferencePage"
@@ -287,14 +292,14 @@
          point="org.eclipse.ui.newWizards">
       <category
             id="org.testng.eclipse"
-            name="TestNG">
+            name="TDD Development"><!-- TestNG-->
       </category>
       <wizard
             category="org.testng.eclipse"
             class="org.testng.eclipse.wizards.NewTestNGClassWizard"
-            icon="icons/full/main16/testng.gif"
+            icon="icons/full/main16/tdd_logo_medium.gif"
             id="org.testng.eclipse.wizards.NewTestNGClassWizard"
-            name="TestNG class">
+            name="Test class"><!-- TestNG class--><!-- icon="icons/full/main16/testng.gif"-->
       </wizard>
   </extension>
 

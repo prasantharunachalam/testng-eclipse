@@ -141,7 +141,8 @@ implements IPropertyChangeListener, IRemoteSuiteListener, IRemoteTestListener {
   private CounterPanel m_counterPanel;
   private Composite m_counterComposite;
 
-  private final Image m_viewIcon = TestNGPlugin.getImageDescriptor("main16/testng_noshadow.gif").createImage();//$NON-NLS-1$
+  //main16/testng_noshadow.gif 
+  private final Image m_viewIcon = TestNGPlugin.getImageDescriptor("main16/tdd_logo_medium.gif").createImage();//$NON-NLS-1$
 
   /**
    * Actions

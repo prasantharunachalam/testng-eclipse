@@ -94,7 +94,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
   }
 
   private void createTop(Composite parent) {
-    final Composite container = SWTUtil.createGridContainer(parent, 3);
+    final Composite container = SWTUtil.createGridContainer(parent, 6);
 
     //
     // Source folder
@@ -151,6 +151,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
 
   private void createMethod(Composite parent) {
     {
+ /*     
       ScrolledComposite  container = new ScrolledComposite (parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
       container.setExpandHorizontal(true);
       container.setExpandVertical(true);     
@@ -162,15 +163,22 @@ public class NewDependencyClassWizardPage extends WizardPage {
       container.setMinSize(methodSection.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 //      container.setMinSize(100,100);
       container.setRedraw(true);
+*/      
+      ScrolledComposite  container = null;
+      Group methodSection = createMethodsGroupSection(parent, container);
+      
     }
     
   }
   
   private Group createMethodsGroupSection(final Composite source, final ScrolledComposite parent){
     
-    Group g = new Group(parent, SWT.SHADOW_ETCHED_OUT);
+    Group g = new Group(source, SWT.SHADOW_ETCHED_OUT);
     g.setText("Methods Signature");  
+    g.setToolTipText("Hover over this once you are ready with Method Signatures to check how the Method Structure looks like!");
+    g.setToolTipText(getSampleText());
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 19;
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
     //gd.verticalSpan = 2;      
     g.setLayoutData(gd);
@@ -184,7 +192,18 @@ public class NewDependencyClassWizardPage extends WizardPage {
    
   }  
   
-  private void createMethodSignatureElements(final Group g, final Composite source, final ScrolledComposite parent){
+  private void createMethodSignatureElements(final Group g1, final Composite source, final ScrolledComposite parent){
+    
+    Group g = new Group(g1, SWT.SHADOW_ETCHED_OUT);
+    g.setText("Method");  
+    GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+    gd.horizontalSpan = 19;
+    g.setLayoutData(gd);
+    
+    GridLayout layout = new GridLayout();
+    g.setLayout(layout);
+    layout.numColumns = 19;        
+    
     b_static = new Button(g, SWT.CHECK);
     b_static.setText("static");
     b_static.addSelectionListener(new SelectionAdapter() {
@@ -199,16 +218,25 @@ public class NewDependencyClassWizardPage extends WizardPage {
       public void widgetSelected(SelectionEvent e) {
           dialogChanged();
       }
-    });       
+    });  
+    
+    b_throws = new Button(g, SWT.CHECK);
+    b_throws.setText("throwsClause");    
+    b_throws.addSelectionListener(new SelectionAdapter() {
+      public void widgetSelected(SelectionEvent e) {
+         dialogChanged();
+      }
+    });      
     
     Label label1 = new Label(g, SWT.NULL);
-    label1.setText("&ModifierName:");   
+    label1.setText("&Modifier:");   
     modifierNames = new org.eclipse.swt.widgets.Combo(g,
         SWT.BORDER | SWT.SINGLE);
     for(String modifier : MODIFIERS){
       modifierNames.add(modifier);  
     }
     GridData modifierName = new GridData(GridData.FILL_HORIZONTAL);
+    modifierName.horizontalSpan = 1;
     modifierNames.setLayoutData(modifierName);  
     modifierNames.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -244,12 +272,16 @@ public class NewDependencyClassWizardPage extends WizardPage {
     for(String returnType : RETURN_TYPES){
       m_returnTypeText.add(returnType);  
     }  
+    // luk n feel
+    GridData gd2 = (GridData)m_returnTypeText.getLayoutData();
+    gd2.horizontalSpan = 12;
+    m_returnTypeText.setLayoutData(gd2);    
     
     Label label3 = new Label(g, SWT.NULL);
     label3.setText("&MethodName:");  
     m_methodNameText = new Text(g, SWT.BORDER | SWT.SINGLE);
     GridData methodGrid = new GridData(GridData.FILL_HORIZONTAL);
-    methodGrid.horizontalSpan = 3;
+    methodGrid.horizontalSpan = 4; //3
     m_methodNameText.setLayoutData(methodGrid);
     m_methodNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -259,9 +291,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
     
     Label label4 = new Label(g, SWT.NULL);
     label4.setText("&MethodParams:");   
-    m_methodParamsText = new Text(g, SWT.BORDER | SWT.SINGLE);
+    m_methodParamsText = new Text(g, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
     GridData methodParamsGrid = new GridData(GridData.FILL_HORIZONTAL);
-    methodParamsGrid.horizontalSpan = 3;
+    methodParamsGrid.horizontalSpan = 12; //3
     m_methodParamsText.setLayoutData(methodParamsGrid);  
     m_methodParamsText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -269,13 +301,6 @@ public class NewDependencyClassWizardPage extends WizardPage {
       }
     });       
     
-    b_throws = new Button(g, SWT.CHECK);
-    b_throws.setText("throwsClause");    
-    b_throws.addSelectionListener(new SelectionAdapter() {
-      public void widgetSelected(SelectionEvent e) {
-         dialogChanged();
-      }
-    });       
     
     final Button addMore = new Button(g, SWT.PUSH);
     addMore.setText("Add More...");
@@ -285,8 +310,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
 //        parent.setExpandVertical(true);parent.setExpandHorizontal(true);parent.setRedraw(true);
 //        parent.setContent(g);
         atomicInteger.addAndGet(1);
-        createMethodSignatureElements(g,source, parent);
-        parent.layout();
+        createMethodSignatureElements(g1,source, parent);//g
+        //parent.layout();
         source.layout();
         
         //set button add more invisible for pervious row
@@ -446,6 +471,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
       put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
     }});    
     
+    //set hover logic in the group -- get group object and set tool tip
+    
     return true;
   }
 
@@ -497,4 +524,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
   public AtomicInteger getAtomicInteger(){
     return atomicInteger;
   }
+  
+  public String getSampleText(){
+    String str = "\n      public String functionalMethod() {  \n       \n     }\n ";
+    return str;
+  }  
 }
