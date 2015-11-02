@@ -287,39 +287,10 @@ public class NewTestNGClassWizardPage extends WizardPage {
 
   private void createTestMethods(Composite parent) {
     //Test Methods
-    {
-      
-      //Composite container = SWTUtil.createGridContainer(parent, 2);
-      /*
-      Table m_table = new Table(parent, SWT.CHECK | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-      TableItem item1 = new TableItem(m_table, SWT.NONE);
-      item1.setData(createTestGroupSection(parent));
-      *
-      Canvas canvas = new Canvas (parent, SWT.SHADOW_ETCHED_OUT  | SWT.V_SCROLL | SWT.H_SCROLL);
-      canvas.addPaintListener(new PaintListener() {
-        public void paintControl(PaintEvent e) {
-          // Do some drawing
-          Rectangle rect = ((Canvas) e.widget).getBounds();
-          e.gc.setForeground(e.display.getSystemColor(SWT.COLOR_RED));
-          e.gc.drawFocus(5, 5, rect.width - 10, rect.height - 10);
-          e.gc.drawText("You can draw text directly on a canvas", 60, 60);
-        }
-      });   
-      */   
-      //createTestGroupSection(canvas);
-//      ScrolledComposite child = new ScrolledComposite(parent, SWT.V_SCROLL | SWT.H_SCROLL);
-//      SWTUtil.createGridLayout(child, 1);
-//      child.setContent(createTestGroupSection(child));
-    //child.setExpandHorizontal(true);
-    //child.setExpandVertical(true); 
       createTestGroupSection(parent);
-    }
-    
   }
   
   private Composite createTestGroupSection(final Composite child){
-    
-    //final Composite child = SWTUtil.createGridContainer(source, 1);
     
     Group g = new Group(child, SWT.SHADOW_ETCHED_OUT);
     g.setText("Test Method");
@@ -370,14 +341,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
       }
     });     
     
-/*
-    Label label2 = new Label(g, SWT.NULL);
-    label2.setText("&ReturnType:");  
-    m_returnTypeText = new Combo(g, SWT.BORDER | SWT.SINGLE);    
-    GridData grid = new GridData(GridData.FILL_HORIZONTAL);
-    grid.horizontalSpan = 2;
-    m_returnTypeText.setLayoutData(grid);  
-  */  
     m_returnTypeText = SWTUtil.createFileBrowserCombo(g, child, "&ReturnType:", new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         if ((m_returnTypeText.getText().contains("/")|| m_returnTypeText.getText().contains("."))){
@@ -423,11 +386,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
       }
     });     
     
-   /* 
-    Button addImpl = new Button(g, SWT.CHECK);
-    addImpl.setText("Add test implementation");     
-    addImpl.addSelectionListener(toSelectionAdapter(g, child));
-    */
     
     final Button addMore = new Button(g, SWT.PUSH);
     addMore.setText("Add More...");
@@ -436,12 +394,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
         atomicInteger.addAndGet(1);
         createTestMethods(child);
         child.layout();
-        
-        //set button add more invisible for pervious row
-        /*Map<String, Control> prevRow = m_methodSignatureRowObjects.get(atomicInteger.get()-1);
-        Button prevAddMore = (Button)prevRow.get(METHOD_ADD_MORE);
-        prevAddMore.setVisible(false);   
-        */
         
         Map<String, Object> prevObj =  m_methodRowObjects.get(atomicInteger.get()-1);
         Map<String, Control> prevRow = (Map<String, Control>) prevObj.get(METHOD_ROW_SIGNATURE);
@@ -453,13 +405,10 @@ public class NewTestNGClassWizardPage extends WizardPage {
       
     });
     
-//    createTestMethodImplementationSection(g, child);    
-
     Group methodImpl = new Group(g, SWT.SHADOW_ETCHED_OUT);
     methodImpl.setText("Method Implementation");
     GridData gd1 = new GridData(GridData.FILL_HORIZONTAL);
     methodImpl.setLayoutData(gd1);
-//    gd.verticalSpan = 10;
     gd1.horizontalSpan = 20;
     GridLayout layout1 = new GridLayout();
     methodImpl.setLayout(layout1);
@@ -520,17 +469,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
     Label assignVariablesLabel = new Label(methodImpl, SWT.NULL);
     assignVariablesLabel.setText("&Assign variables:");
 
-/*    
-    Label assignVariablesTypeLabel = new Label(methodImpl, SWT.NULL);
-    assignVariablesTypeLabel.setText("&Type:");
-    assignVariableTypes = new org.eclipse.swt.widgets.Combo(methodImpl,
-        SWT.BORDER | SWT.SINGLE);
-    assignVariableTypes.addModifyListener(new ModifyListener() {
-      public void modifyText(ModifyEvent e) {
-        dialogChanged();
-      }
-    });
-*/    
     assignVariableTypes = SWTUtil.createFileBrowserCombo(methodImpl, child, "&Type:", new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         if ((assignVariableTypes.getText().contains("/")|| assignVariableTypes.getText().contains("."))){
@@ -616,7 +554,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
     m_methodImpl.put(METHOD_ADD_MORE_IMPL, addMoreImpl);
     
     m_impl_lists = new ArrayList<>();
-//    m_impl_lists.add(m_methodSignatureRowObjects);
     m_impl_lists.add(m_methodImpl);
     
     m_methodSignImplContainer = new HashMap<>();
@@ -968,20 +905,12 @@ public class NewTestNGClassWizardPage extends WizardPage {
             GridData gd = new GridData(GridData.FILL_HORIZONTAL);
             methodImpl.setLayoutData(gd);
 //            gd.verticalSpan = 10;
-            gd.horizontalSpan = 16;
+            gd.horizontalSpan = 20;//16
             GridLayout layout = new GridLayout();
             methodImpl.setLayout(layout);
-            layout.numColumns = 16;
+            layout.numColumns = 20;//16
             createTestMethodImplementationSection(methodImpl, container, atomicInteger.get()); 
-            /*
-            methodImplmn = new Label(g, SWT.NULL);
-            methodImplmn.setText("Method Implementation :");
-            GridData gd = new GridData(GridData.FILL_HORIZONTAL);
-            methodImplmn.setLayoutData(gd);
-            gd.horizontalSpan = 15;*/
           }
-//          createTestMethodImplementationSection(methodImpl, container);
-//          createTestMethodImplementationSection(g, container);
           methodImpl.setVisible(true);
           container.layout();
           g.layout();
@@ -1011,64 +940,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
   
   public void createTestMethodImplementationSection(final Group methodImpl,
       final Composite child, int buttonValue) {
-/*    
-    {
-      m_dependentClassNameText = SWTUtil.createFileBrowserText(g, container,
-          "&Dependent Class Name:", new ModifyListener() {
-            public void modifyText(ModifyEvent e) {
-              try {
-                dependentClassNameTextChanged(getJavaClassNameFromFullPath(m_dependentClassNameText.getText()), methods);
-              } catch (ClassNotFoundException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-              }
-            }
-          });
-      GridData gd = (GridData)m_dependentClassNameText.getLayoutData();
-      gd.horizontalSpan = 2;
-      m_dependentClassNameText.setLayoutData(gd);
-    }
-    
-   
-    
-    Label methodsLabel = new Label(g, SWT.NULL);
-    methodsLabel.setText("&Methods:");
-    methods = new org.eclipse.swt.widgets.Combo(g, SWT.BORDER | SWT.SINGLE);
-    GridData modifierName = new GridData(GridData.FILL_HORIZONTAL);
-    methods.setLayoutData(modifierName);
-
-    Label methodParamsLabel = new Label(g, SWT.NULL);
-    methodParamsLabel.setText("&Method Params:");
-    m_dependentMethodParamsText = new Text(g, SWT.BORDER | SWT.SINGLE);
-
-    Label assignVariablesLabel = new Label(g, SWT.NULL);
-    assignVariablesLabel.setText("&Assign variables:");
-
-    Label assignVariablesTypeLabel = new Label(g, SWT.NULL);
-    assignVariablesTypeLabel.setText("&Type:");
-    assignVariableTypes = new org.eclipse.swt.widgets.Combo(g,
-        SWT.BORDER | SWT.SINGLE);
-
-    Label assignVariablesNameLabel = new Label(g, SWT.NULL);
-    assignVariablesNameLabel.setText("&Name:");
-    m_assignVariableNameText = new Text(g, SWT.BORDER | SWT.SINGLE);
-
-    Label assertionsLabel = new Label(g, SWT.NULL);
-    assertionsLabel.setText("&Add Assertions:");
-    assertions = new org.eclipse.swt.widgets.Combo(g, SWT.BORDER | SWT.SINGLE);
-    for (String assertion : ASSERTIONS) {
-      assertions.add(assertion);
-    }
-    GridData assertionsGrid = new GridData(GridData.FILL_HORIZONTAL);
-    assertions.setLayoutData(assertionsGrid);
-    
-    Button addMore = new Button(g, SWT.PUSH);
-    addMore.setText("Add More...");
-    addMore.addSelectionListener(toSelectionAdapterForDependencyInvocation(g, container));
-  
-*/    
-  
-    
     {
       m_dependentClassNameText = SWTUtil.createFileBrowserText(methodImpl, child,
           "&ClassName:", new ModifyListener() {
@@ -1085,7 +956,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
             }
           });
       GridData gd2 = (GridData)m_dependentClassNameText.getLayoutData();
-      gd2.horizontalSpan = 4;
+      gd2.horizontalSpan = 7;//4
       m_dependentClassNameText.setLayoutData(gd2);
       m_dependentClassNameText.setToolTipText("Select any Dependent Class Name that needs to be used for method invocation. If not available, create new one using Add Dependency Class");      
     }
@@ -1094,6 +965,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
     methodsLabel.setText("&Methods:");
     methods = new org.eclipse.swt.widgets.Combo(methodImpl, SWT.BORDER | SWT.SINGLE);
     GridData modifierNameImpl = new GridData(GridData.FILL_HORIZONTAL);
+    // luk n feel
+    modifierNameImpl.horizontalSpan = 3;
     methods.setLayoutData(modifierNameImpl);
     methods.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
@@ -1109,15 +982,31 @@ public class NewTestNGClassWizardPage extends WizardPage {
       public void modifyText(ModifyEvent e) {
         dialogChanged();
       }
-    });     
+    });  
+    
+    //added for look n feel
+    GridData methodParamsImplGrid = new GridData(GridData.FILL_BOTH);
+    methodParamsImplGrid.horizontalSpan = 6;  
+    m_dependentMethodParamsText.setLayoutData(methodParamsImplGrid);  
+    
+    // 11 : 9 is there change it to 20 : 20 
+    // better to have below  as new line     
 
     Label assignVariablesLabel = new Label(methodImpl, SWT.NULL);
     assignVariablesLabel.setText("&Assign variables:");
 
-    Label assignVariablesTypeLabel = new Label(methodImpl, SWT.NULL);
-    assignVariablesTypeLabel.setText("&Type:");
-    assignVariableTypes = new org.eclipse.swt.widgets.Combo(methodImpl,
-        SWT.BORDER | SWT.SINGLE);
+    assignVariableTypes = SWTUtil.createFileBrowserCombo(methodImpl, child, "&Type:", new ModifyListener() {
+      public void modifyText(ModifyEvent e) {
+        if ((assignVariableTypes.getText().contains("/")|| assignVariableTypes.getText().contains("."))){
+          assignVariableTypes.setText(getJavaClassNameFromFullPath(assignVariableTypes.getText()));
+        }
+        dialogChanged();
+      }
+    });
+    assignVariableTypes.setToolTipText("Select any of the below Method Return types. If not available, select any Java Type by clicking Browse");
+    for(String returnType : RETURN_TYPES){
+      assignVariableTypes.add(returnType);  
+    }    
 
     Label assignVariablesNameLabel = new Label(methodImpl, SWT.NULL);
     assignVariablesNameLabel.setText("&Name:");
@@ -1126,7 +1015,11 @@ public class NewTestNGClassWizardPage extends WizardPage {
       public void modifyText(ModifyEvent e) {
         dialogChanged();
       }
-    });     
+    }); 
+    //added for look n feel
+    GridData assignVariableGrid = new GridData(GridData.FILL_HORIZONTAL);
+    assignVariableGrid.horizontalSpan = 4;  
+    m_assignVariableNameText.setLayoutData(assignVariableGrid);    
     
     Label assertionsLabel = new Label(methodImpl, SWT.NULL);
     assertionsLabel.setText("&Assertions:");
@@ -1143,13 +1036,23 @@ public class NewTestNGClassWizardPage extends WizardPage {
     });    
     
     Label assignVariablesValueLabel = new Label(methodImpl, SWT.NULL);
-    assignVariablesValueLabel.setText("&Value:");
-    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);  
+    assignVariablesValueLabel.setText("&Assert Value:");
+    m_assignVariableValueText = new Text(methodImpl, SWT.BORDER | SWT.SINGLE);   
     m_assignVariableValueText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
         dialogChanged();
       }
-    });     
+    });
+    //added for look n feel
+    GridData assignVariableValueGrid = new GridData(GridData.FILL_HORIZONTAL);
+    assignVariableValueGrid.horizontalSpan = 4;  
+    m_assignVariableValueText.setLayoutData(assignVariableValueGrid);  
+    
+    Button display = new Button(methodImpl, SWT.PUSH);
+    display.setText("Show");
+    display.addSelectionListener(toSelectionAdapterForShow(child));
+    display.setToolTipText("Click on this to check how the user selection inputs looks like...");
+    display.setData(atomicInteger.get());    
     
     Button addMoreImpl = new Button(methodImpl, SWT.PUSH);
     addMoreImpl.setText("Add More...");

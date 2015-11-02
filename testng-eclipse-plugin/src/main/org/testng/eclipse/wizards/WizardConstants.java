@@ -72,4 +72,6 @@ public class WizardConstants {
   public static final String DISPLAY_ASSERT_NOTNULL = "Assert NotNull";
   public static final String DISPLAY_ASSERT_TRUE = "Assert True";
   public static final String DISPLAY_ASSERT_FALSE = "Assert False";    
+  
+  public static final String METHOD_SIGNATURE_GROUP = "Hover over this once you are ready with Method Signatures to check how the Method Structures looks like!";
 }

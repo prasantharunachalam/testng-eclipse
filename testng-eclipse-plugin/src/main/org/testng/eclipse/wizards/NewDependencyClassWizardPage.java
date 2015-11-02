@@ -36,6 +36,7 @@ import org.testng.eclipse.util.Utils.JavaElement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.testng.eclipse.wizards.WizardConstants.*;
 import static org.testng.eclipse.util.SWTUtil.getJavaClassNameFromFullPath;
@@ -67,7 +68,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
   private Button b_throws;
   public static final String[] RETURN_TYPES = new String[] {
       "void", "Integer", "Double", "Object", "Boolean"
-    };  
+    };
+  private List<Control> mainMethodGoup = new CopyOnWriteArrayList<>();
 
   public NewDependencyClassWizardPage() {
     super(ResourceUtil.getString("NewDependencyClassWizardPage.title"));
@@ -151,19 +153,6 @@ public class NewDependencyClassWizardPage extends WizardPage {
 
   private void createMethod(Composite parent) {
     {
- /*     
-      ScrolledComposite  container = new ScrolledComposite (parent, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
-      container.setExpandHorizontal(true);
-      container.setExpandVertical(true);     
-      Group methodSection = createMethodsGroupSection(parent, container);
-      container.setContent(methodSection);
-      methodSection.setSize(methodSection.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-      //container.setAlwaysShowScrollBars(true);
-      //not sure about this line, was optional in my case
-      container.setMinSize(methodSection.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-//      container.setMinSize(100,100);
-      container.setRedraw(true);
-*/      
       ScrolledComposite  container = null;
       Group methodSection = createMethodsGroupSection(parent, container);
       
@@ -175,8 +164,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
     
     Group g = new Group(source, SWT.SHADOW_ETCHED_OUT);
     g.setText("Methods Signature");  
-    g.setToolTipText("Hover over this once you are ready with Method Signatures to check how the Method Structure looks like!");
-    g.setToolTipText(getSampleText());
+    g.setToolTipText(METHOD_SIGNATURE_GROUP);
+    //g.setToolTipText(getSampleText());
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 19;
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -186,6 +175,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
     GridLayout layout = new GridLayout();
     g.setLayout(layout);
     layout.numColumns = 19;     
+    
+    //set group
+    mainMethodGoup.add(g);
     
     createMethodSignatureElements(g, source, parent);
     return g;
@@ -418,12 +410,19 @@ public class NewDependencyClassWizardPage extends WizardPage {
       }
     }
     //validations for method signature
+    Group  g = (Group)mainMethodGoup.get(0);
     int hitsForAddMoreMethods = getAtomicInteger().get();
     if(b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
         || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
         || !StringUtils.isEmptyString(m_methodNameText.getText())) {
-      if(!validateAndSetMethodSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText))
+      if(!validateAndSetMethodSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText)){
+        g.setToolTipText(METHOD_SIGNATURE_GROUP);
         return;
+      }else{
+        //update tool tip for group
+        String toolTip = getMethodsSignature();
+        g.setToolTipText(toolTip);
+      }
     }
     else{
       if(hitsForAddMoreMethods > 1){
@@ -440,8 +439,14 @@ public class NewDependencyClassWizardPage extends WizardPage {
             if(b_st.getSelection() || b_fn.getSelection() || b_th.getSelection() || !StringUtils.isEmptyString(c_md.getText()) 
                 || !StringUtils.isEmptyString(t_mp.getText()) || !StringUtils.isEmptyString(c_rt.getText()) 
                 || !StringUtils.isEmptyString(t_mn.getText())) {
-              if(!validateAndSetMethodSignature(b_st, b_fn, b_th, c_md, t_mp, c_rt, t_mn))
+              if(!validateAndSetMethodSignature(b_st, b_fn, b_th, c_md, t_mp, c_rt, t_mn)){
+                g.setToolTipText(METHOD_SIGNATURE_GROUP);
                 return;            
+              }else{
+                //update tool tip for group
+                String toolTip = getMethodsSignature();
+                g.setToolTipText(toolTip);
+              }
             }
           }
         }
@@ -528,5 +533,28 @@ public class NewDependencyClassWizardPage extends WizardPage {
   public String getSampleText(){
     String str = "\n      public String functionalMethod() {  \n       \n     }\n ";
     return str;
-  }  
+  } 
+  
+  public String getMethodsSignature(){
+    StringBuilder methods = new StringBuilder();
+    Map<Integer, Map<String, String>> map =  getMethodSignature();
+    for(int i = 1 ; i <= getAtomicInteger().get(); i++){
+      Map<String, String> obj = map.get(i);
+      if(obj != null){
+        methods.append("\n"
+            + obj.get(METHOD_MODIFIER)+SPACE
+            + obj.get(METHOD_STATIC)+SPACE
+            + obj.get(METHOD_FINAL)+SPACE
+            +obj.get(METHOD_RETURN_TYPE)+ SPACE
+            + obj.get(METHOD_NAME)+SPACE
+            + OPEN_BRACE  +SPACE
+            + obj.get(METHOD_PARAMS_TYPE)+SPACE
+            + CLOSE_BRACE +SPACE   
+            + obj.get(METHOD_THROWS_CLAUSE)+SPACE
+            + " {\n \n"
+            + "  }\n");     
+      }
+    }
+    return methods.toString();
+  }
 }
