@@ -61,6 +61,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
     }; 
   private Map<Integer, Map<String, String>> m_methodSignature = new HashMap<>();
   private Map<Integer, Map<String, Control>> m_methodSignatureRowObjects = new HashMap<>();  
+  private Map<String, Control> m_methodSignatureRow;
   private AtomicInteger atomicInteger = new AtomicInteger(1);
   private AtomicInteger atomicIntegerForWritingJavaContent = new AtomicInteger(0);
   private Button b_static;
@@ -165,7 +166,6 @@ public class NewDependencyClassWizardPage extends WizardPage {
     Group g = new Group(source, SWT.SHADOW_ETCHED_OUT);
     g.setText("Methods Signature");  
     g.setToolTipText(METHOD_SIGNATURE_GROUP);
-    //g.setToolTipText(getSampleText());
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
     gd.horizontalSpan = 19;
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -256,7 +256,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
     */
     m_returnTypeText = SWTUtil.createFileBrowserCombo(g, source, "&ReturnType:", new ModifyListener() {
       public void modifyText(ModifyEvent e) {
-        m_returnTypeText.setText(getJavaClassNameFromFullPath(m_returnTypeText.getText()));
+        if(m_returnTypeText.getText().contains("/") || m_returnTypeText.getText().contains(".")){
+          m_returnTypeText.setText(getJavaClassNameFromFullPath(m_returnTypeText.getText()));
+        }
         dialogChanged();
       }
     });
@@ -277,6 +279,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
     m_methodNameText.setLayoutData(methodGrid);
     m_methodNameText.addModifyListener(new ModifyListener() {
       public void modifyText(ModifyEvent e) {
+        m_methodNameText.getText();
         dialogChanged();
       }
     });       
@@ -420,8 +423,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
         return;
       }else{
         //update tool tip for group
-        String toolTip = getMethodsSignature();
-        g.setToolTipText(toolTip);
+//        String toolTip = getMethodsSignature();
+//        g.setToolTipText(toolTip);
       }
     }
     else{
@@ -444,8 +447,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
                 return;            
               }else{
                 //update tool tip for group
-                String toolTip = getMethodsSignature();
-                g.setToolTipText(toolTip);
+//                String toolTip = getMethodsSignature();
+//                g.setToolTipText(toolTip);
               }
             }
           }
@@ -453,6 +456,8 @@ public class NewDependencyClassWizardPage extends WizardPage {
       }
     }
     updateStatus(null);
+    //set tooltip in method group section
+    setMethodSignaturesDuplicate();
   }
   
   private boolean validateAndSetMethodSignature(final Button b_static, final Button b_final, final Button b_throws, 
@@ -466,7 +471,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
       return false;        
     }
     
-    m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, String> () {{
+/*    m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, String> () {{
       put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
       put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
       put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
@@ -477,9 +482,78 @@ public class NewDependencyClassWizardPage extends WizardPage {
     }});    
     
     //set hover logic in the group -- get group object and set tool tip
-    
+    Group  g = (Group)mainMethodGoup.get(0);
+    //update tool tip for group
+    String toolTip = getMethodsSignature();
+    g.setToolTipText(toolTip); 
+    */   
     return true;
   }
+  
+  public void setMethodSignatures(){
+    for(int i = 1; i <= m_methodSignatureRowObjects.size(); i++){
+      Map<String, Control> methodSign = (Map<String, Control>) m_methodSignatureRowObjects.get(i); 
+
+      final Button b_static = (Button)methodSign.get(METHOD_STATIC);
+      final Button b_final = (Button)methodSign.get(METHOD_FINAL);
+      final Combo modifierNames = (Combo)methodSign.get(METHOD_MODIFIER);
+      final Combo m_returnTypeText = (Combo)methodSign.get(METHOD_RETURN_TYPE);
+      final Text m_methodNameText = (Text)methodSign.get(METHOD_NAME);
+      final Text m_methodParamsText = (Text)methodSign.get(METHOD_PARAMS_TYPE);
+      final Button b_throws = (Button)methodSign.get(METHOD_THROWS_CLAUSE);   
+      
+      if(!StringUtils.isEmptyString(m_returnTypeText.getText()) && !StringUtils.isEmptyString(m_methodNameText.getText())) {
+    
+        m_methodSignature.put(atomicIntegerForWritingJavaContent.addAndGet(1), new HashMap<String, String> () {{
+          put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
+          put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
+          put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
+          put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
+          put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
+          put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
+          put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
+        }}); 
+        
+      }
+    }
+  }
+  
+  public void setMethodSignaturesDuplicate(){
+    Map<Integer, Map<String, String>> m_methodSignatureD = new HashMap<>();
+    AtomicInteger atomicIntegerForWritingJavaContentD = new AtomicInteger(0);
+    
+    for(int i = 1; i <= m_methodSignatureRowObjects.size(); i++){
+      Map<String, Control> methodSign = (Map<String, Control>) m_methodSignatureRowObjects.get(i); 
+
+      final Button b_static = (Button)methodSign.get(METHOD_STATIC);
+      final Button b_final = (Button)methodSign.get(METHOD_FINAL);
+      final Combo modifierNames = (Combo)methodSign.get(METHOD_MODIFIER);
+      final Combo m_returnTypeText = (Combo)methodSign.get(METHOD_RETURN_TYPE);
+      final Text m_methodNameText = (Text)methodSign.get(METHOD_NAME);
+      final Text m_methodParamsText = (Text)methodSign.get(METHOD_PARAMS_TYPE);
+      final Button b_throws = (Button)methodSign.get(METHOD_THROWS_CLAUSE);   
+      
+      if(!StringUtils.isEmptyString(m_returnTypeText.getText()) && !StringUtils.isEmptyString(m_methodNameText.getText())) {
+    
+        m_methodSignatureD.put(atomicIntegerForWritingJavaContentD.addAndGet(1), new HashMap<String, String> () {{
+          put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
+          put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
+          put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
+          put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
+          put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
+          put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
+          put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
+        }}); 
+        
+      }
+    }    
+    
+    //set hover logic in the group -- get group object and set tool tip
+    Group  g = (Group)mainMethodGoup.get(0);
+    //update tool tip for group
+    String toolTip = getMethodsSignature(m_methodSignatureD, atomicIntegerForWritingJavaContentD);
+    g.setToolTipText(toolTip);    
+  }  
 
   private void updateStatus(String message) {
     setErrorMessage(message);
@@ -535,10 +609,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
     return str;
   } 
   
-  public String getMethodsSignature(){
+  public String getMethodsSignature(Map<Integer, Map<String, String>> map, AtomicInteger atomicIntegerForWritingJavaContentD){
     StringBuilder methods = new StringBuilder();
-    Map<Integer, Map<String, String>> map =  getMethodSignature();
-    for(int i = 1 ; i <= getAtomicInteger().get(); i++){
+    for(int i = 1 ; i <= atomicIntegerForWritingJavaContentD.get(); i++){
       Map<String, String> obj = map.get(i);
       if(obj != null){
         methods.append("\n"

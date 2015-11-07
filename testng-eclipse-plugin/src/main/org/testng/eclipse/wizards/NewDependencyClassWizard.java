@@ -62,6 +62,10 @@ public class NewDependencyClassWizard extends Wizard implements INewWizard {
 	 */
 	@Override
   public boolean performFinish() {
+	  
+	   //set Map for method ui controls with impl
+    m_page.setMethodSignatures();
+	  
 		String containerName = m_page.getSourceFolder();
 		String className = m_page.getClassName();
 		String packageName = m_page.getPackageName();

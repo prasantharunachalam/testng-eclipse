@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.SelectionDialog;
+import org.testng.collections.CollectionUtils;
 import org.testng.eclipse.util.JDTUtil;
 import org.testng.eclipse.util.ResourceUtil;
 import org.testng.eclipse.util.SWTUtil;
@@ -48,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.testng.eclipse.util.SWTUtil.getJavaClassNameFromFullPath;
@@ -115,6 +117,9 @@ public class NewTestNGClassWizardPage extends WizardPage {
   private Button b_static;
   private Button b_final;
   private Button b_throws;
+  
+  private List<Group> testMethodGoupsForNegativeCase = new CopyOnWriteArrayList<>();
+  private List<Group> testMethodGoupsForPositiveCase = new CopyOnWriteArrayList<>();
   
   public static final String[] RETURN_TYPES = new String[] {
       "void", "Integer", "Double", "Object", "Boolean"
@@ -295,7 +300,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
     Group g = new Group(child, SWT.SHADOW_ETCHED_OUT);
     g.setText("Test Method");
     g.setToolTipText("Hover ove this once you are ready with Test Implementation to check how the Test looks like!");
-    g.setToolTipText(getSampleText());
+    //g.setToolTipText(getSampleText());
     GridData gd = new GridData(GridData.FILL_HORIZONTAL);
     //GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
     //gd.verticalSpan = 2; 
@@ -306,8 +311,10 @@ public class NewTestNGClassWizardPage extends WizardPage {
     
     GridLayout layout = new GridLayout();
     g.setLayout(layout);
-    layout.numColumns = 20;     
+    layout.numColumns = 20; 
     
+    //set group
+//    testMethodGoupsForNegativeCase.add(g);
     
     b_static = new Button(g, SWT.CHECK);
     b_static.setText("static");
@@ -538,6 +545,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
     m_methodSignatureRowObjects.put(METHOD_FINAL, b_final);
     m_methodSignatureRowObjects.put(METHOD_MODIFIER, modifierNames);
     m_methodSignatureRowObjects.put(METHOD_RETURN_TYPE, m_returnTypeText);
+    //set group obj inside method name
+    m_methodNameText.setData(g);
     m_methodSignatureRowObjects.put(METHOD_NAME, m_methodNameText);
     m_methodSignatureRowObjects.put(METHOD_PARAMS_TYPE, m_methodParamsText);
     m_methodSignatureRowObjects.put(METHOD_THROWS_CLAUSE, b_throws);
@@ -652,6 +661,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
         || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
         || !StringUtils.isEmptyString(m_methodNameText.getText())) {
       if(validateMethodAndSetSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText)){
+//        setMethodSignatureAndImpl();
         //Iterate for every  method impl inside method row
         Map<String, Object> obj =  m_methodRowObjects.get(atomicInteger.get());
         List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) obj.get(METHOD_ROW_IMPL);
@@ -667,8 +677,17 @@ public class NewTestNGClassWizardPage extends WizardPage {
               || !StringUtils.isEmptyString(t_dmp.getText())  || !StringUtils.isEmptyString(c_vt.getText())  
               || !StringUtils.isEmptyString(t_vn.getText()) || !StringUtils.isEmptyString(c_a.getText()) || !StringUtils.isEmptyString(t_avv.getText())){
             
-            if(!validateAndSetMethodImpl(t_dc, c_m, t_dmp, c_vt, t_vn, c_a, t_avv)){
+            if(!validateAndSetMethodImpl(t_dc, c_m, t_dmp, c_vt, t_vn, c_a, t_avv, m_methodNameText)){
               return;
+            }else {
+//              setMethodSignatureAndImpl();
+              //update tool tip for group
+              /*
+              for(Group g : testMethodGoupsForPositiveCase){
+//                String toolTip = getMethodsSignature();
+                g.setToolTipText(""); 
+              }
+              */
             }
           }
         }
@@ -694,6 +713,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
                 || !StringUtils.isEmptyString(t_mp.getText()) || !StringUtils.isEmptyString(c_mrt.getText()) 
                 || !StringUtils.isEmptyString(t_mn.getText())) {
               if(validateMethodAndSetSignature(b_st, b_fn, b_th, c_md, t_mp, c_mrt, t_mn)){
+//                setMethodSignatureAndImpl();
                 //Iterate for every  method impl inside method row 
                 Map<String, Object> obj =  m_methodRowObjects.get(atomicInteger.get());
                 List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) obj.get(METHOD_ROW_IMPL);
@@ -708,8 +728,17 @@ public class NewTestNGClassWizardPage extends WizardPage {
                   if(!StringUtils.isEmptyString(t_dc.getText()) || !StringUtils.isEmptyString(c_m.getText()) 
                       || !StringUtils.isEmptyString(t_dmp.getText())  || !StringUtils.isEmptyString(c_vt.getText())  
                       || !StringUtils.isEmptyString(t_vn.getText()) || !StringUtils.isEmptyString(c_a.getText()) || !StringUtils.isEmptyString(t_avv.getText())){
-                    if(!validateAndSetMethodImpl(t_dc, c_m, t_mp, c_vt, t_vn, c_a, t_avv)){
+                    if(!validateAndSetMethodImpl(t_dc, c_m, t_mp, c_vt, t_vn, c_a, t_avv, t_mn)){
                       return;
+                    }else {
+//                      setMethodSignatureAndImpl();
+                      //update tool tip for group
+                      /*
+                      for(Group g : testMethodGoupsForPositiveCase){
+//                        String toolTip = getMethodsSignature();
+                        g.setToolTipText("");
+                      }
+                      */
                     }
                   }
                 }
@@ -724,16 +753,20 @@ public class NewTestNGClassWizardPage extends WizardPage {
     }
     updateStatus(null);
     //set hover logic in the group -- get group object and set tool tip
+    setMethodSignatureAndImplDuplicate();
   }
   
   private boolean validateAndSetMethodImpl(final Text m_dependentClassNameText, final Combo methods, final Text dependentMethodParamsText,
-      final Combo assignVariableTypes, final Text assignVariableNameText, final Combo assertions, final Text assignVariableValueText) {
+      final Combo assignVariableTypes, final Text assignVariableNameText, final Combo assertions, final Text assignVariableValueText, final Text m_methodNameText) {
+    Group g = (Group)m_methodNameText.getData();
     if(StringUtils.isEmptyString(m_dependentClassNameText.getText())){
       updateStatus("Class cannot be empty");
+      g.setToolTipText(METHOD_SIGNATURE_GROUP);
       return false;        
     } 
     if(StringUtils.isEmptyString(methods.getText())){
       updateStatus("Methods cannot be empty");
+      g.setToolTipText(METHOD_SIGNATURE_GROUP);
       return false;        
     }
     
@@ -741,9 +774,11 @@ public class NewTestNGClassWizardPage extends WizardPage {
         || !StringUtils.isEmptyString(assignVariableNameText.getText())) {
       if (StringUtils.isEmptyString(assignVariableNameText.getText())) {
         updateStatus("Assign Variable Name cannot be empty");
+        g.setToolTipText(METHOD_SIGNATURE_GROUP);
         return false;
       } else if (StringUtils.isEmptyString(assignVariableTypes.getText())) {
         updateStatus("Assign Variable Type cannot be empty");
+        g.setToolTipText(METHOD_SIGNATURE_GROUP);
         return false;
       }
     }
@@ -777,12 +812,15 @@ public class NewTestNGClassWizardPage extends WizardPage {
 
   private boolean validateMethodAndSetSignature(final Button b_static, final Button b_final, final Button b_throws, 
       final Combo modifierNames, final Text m_methodParamsText, final Combo m_returnTypeText, final Text m_methodNameText){
+    Group g = (Group)m_methodNameText.getData();
     if(StringUtils.isEmptyString(m_returnTypeText.getText())){
       updateStatus("Method Return Type cannot be empty");
+      g.setToolTipText(METHOD_SIGNATURE_GROUP);
       return false;        
     } 
     if(StringUtils.isEmptyString(m_methodNameText.getText())){
       updateStatus("Method Name cannot be empty");
+      g.setToolTipText(METHOD_SIGNATURE_GROUP);
       return false;        
     }
     /*
@@ -800,7 +838,6 @@ public class NewTestNGClassWizardPage extends WizardPage {
   }  
 
   public void setMethodSignatureAndImpl(){
-    //iterate methodrow object pick up the user selected rows and iterate impls if available, then populate row and its impls one by one
     
     for(int i = 1; i <= m_methodRowObjects.size(); i++){
       Map<String, Object> rowObj = m_methodRowObjects.get(i);
@@ -825,7 +862,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
             put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
             put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
           }}); 
-      
+          
           //Iterate for every  method impl inside method row 
           List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
       
@@ -852,9 +889,84 @@ public class NewTestNGClassWizardPage extends WizardPage {
                 methodImplList.add(m_methodImplementation);
                 
                 Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
-                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);            
+                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);        
               }
           }      
+      }
+      
+    }
+   
+  }
+  
+  
+  public void setMethodSignatureAndImplDuplicate(){
+    //iterate methodrow object pick up the user selected rows and iterate impls if available, then populate row and its impls one by one
+    Map<Integer, Map<String, Object>> m_methodSignatureD =  new HashMap<>();
+    Map<String, Map<String, String>> m_methodImplementationD =  new HashMap<>();
+    List<Map<String, Map<String, String>>> methodImplListD = new ArrayList<>();
+    AtomicInteger atomicIntegerForWritingJavaContentD = new AtomicInteger(0);
+    
+    for(int i = 1; i <= m_methodRowObjects.size(); i++){
+      Map<String, Object> rowObj = m_methodRowObjects.get(i);
+      Map<String, Control> methodSign = (Map<String, Control>) rowObj.get(METHOD_ROW_SIGNATURE); 
+
+      final Button b_static = (Button)methodSign.get(METHOD_STATIC);
+      final Button b_final = (Button)methodSign.get(METHOD_FINAL);
+      final Combo modifierNames = (Combo)methodSign.get(METHOD_MODIFIER);
+      final Combo m_returnTypeText = (Combo)methodSign.get(METHOD_RETURN_TYPE);
+      final Text m_methodNameText = (Text)methodSign.get(METHOD_NAME);
+      final Text m_methodParamsText = (Text)methodSign.get(METHOD_PARAMS_TYPE);
+      final Button b_throws = (Button)methodSign.get(METHOD_THROWS_CLAUSE);   
+      
+      if(!StringUtils.isEmptyString(m_returnTypeText.getText()) && !StringUtils.isEmptyString(m_methodNameText.getText())) {
+          //method signature for 1st method...
+        m_methodSignatureD.put(atomicIntegerForWritingJavaContentD.addAndGet(1), new HashMap<String, Object> () {{
+            put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
+            put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
+            put(METHOD_PARAMS_TYPE, StringUtils.isEmptyString(m_methodParamsText.getText())?EMPTY:m_methodParamsText.getText());
+            put(METHOD_STATIC, b_static.getSelection()?STATIC:EMPTY);
+            put(METHOD_FINAL, b_final.getSelection()?FINAL:EMPTY);
+            put(METHOD_THROWS_CLAUSE, b_throws.getSelection()?THROWS+SPACE+EXCEPTION:EMPTY);
+            put(METHOD_MODIFIER, StringUtils.isEmptyString(modifierNames.getText())?EMPTY:modifierNames.getText());
+          }}); 
+      
+          //set tooltip for user input methods
+          Group g = (Group)m_methodNameText.getData();
+          //g.setToolTipText(getMethodText(m_methodSignatureD, atomicIntegerForWritingJavaContentD.get()));
+          //testMethodGoupsForPositiveCase.add(g);
+          
+          
+          //Iterate for every  method impl inside method row 
+          List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
+      
+          for(Map<String, Control> map :objImplList){
+            final Text m_dependentClassNameText = (Text)map.get(DEPENDENT_CLASSNAME);
+            final Combo methods = (Combo)map.get(METHODS);
+            final Text dependentMethodParamsText = (Text)map.get(DEPENDENT_METHOD_PARAMS);
+            final Combo assignVariableTypes = (Combo)map.get(ASSIGN_VARIABLE_TYPES);
+            final Text assignVariableNameText = (Text)map.get(ASSIGN_VARIABLE_NAME);
+            final Combo assertions = (Combo)map.get(ASSERTIONS_COMBO);
+            final Text assignVariableValueText = (Text)map.get(ASSIGN_VARIABLE_VALUE);
+            
+              if(!StringUtils.isEmptyString(m_dependentClassNameText.getText()) && !StringUtils.isEmptyString(methods.getText())) {
+                //impl present for 1st method....
+                m_methodImplementationD.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
+                  put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
+                  put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
+                  put(DEPENDENT_METHOD_PARAMS, StringUtils.isEmptyString(dependentMethodParamsText.getText())?EMPTY:dependentMethodParamsText.getText());
+                  put(ASSIGN_VARIABLE_TYPES, StringUtils.isEmptyString(assignVariableTypes.getText())?EMPTY:assignVariableTypes.getText());
+                  put(ASSIGN_VARIABLE_NAME, StringUtils.isEmptyString(assignVariableNameText.getText())?EMPTY:assignVariableNameText.getText());
+                  put(ASSIGN_VARIABLE_VALUE, StringUtils.isEmptyString(assignVariableValueText.getText())?EMPTY:assignVariableValueText.getText());
+                  put(ASSERTIONS_COMBO, StringUtils.isEmptyString(assertions.getText())?EMPTY:assertions.getText());
+                }}); 
+                methodImplListD.add(m_methodImplementation);
+                
+                Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
+                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);        
+              }
+          }      
+          //set tooltip for user input methods -  override if merthod impl presents
+          g.setToolTipText(getMethodText(m_methodSignatureD, atomicIntegerForWritingJavaContentD.get()));            
       }
       
     }
@@ -1175,6 +1287,101 @@ public class NewTestNGClassWizardPage extends WizardPage {
   public String getSampleText(){
     String str = "\n      public void tddTest() {\n       String result = functionalClass.functionalMethod();\n       assertNotNull(result);\n    }\n ";
     return str;
+  }
+  
+  public String getMethodText(Map<Integer, Map<String, Object>> map, int i){
+    StringBuilder methods = new StringBuilder();
+    int assertCount = 0;
+    //Test Methods
+      Map<String, Object> obj = map.get(i);
+      if(obj != null){
+        List<Map<String, Map<String, String>>> methodImplList = (List<Map<String, Map<String, String>>>) obj.get(METHOD_IMPLEMENTATION_LIST);
+        boolean hasElements = CollectionUtils.hasElements(methodImplList);
+        String methodModifier = (String) obj.get(METHOD_MODIFIER);
+        String methodStatic = (String) obj.get(METHOD_STATIC);
+        String methodFinal = (String) obj.get(METHOD_FINAL);
+        String methodReturnType = (String) obj.get(METHOD_RETURN_TYPE);
+        String methodName = (String) obj.get(METHOD_NAME);
+        String methodParamsType = (String) obj.get(METHOD_PARAMS_TYPE);
+        String methodThrows = (String) obj.get(METHOD_THROWS_CLAUSE);        
+        methods.append("\n"
+            + TAB + TAB
+            + ((!StringUtils.isEmptyString(methodModifier))?methodModifier+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodStatic))?methodStatic+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodFinal))?methodFinal+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodReturnType))?methodReturnType+SPACE:EMPTY)
+            + ((!StringUtils.isEmptyString(methodName))?methodName+SPACE:EMPTY)
+            + OPEN_BRACE  +SPACE
+            + ((!StringUtils.isEmptyString(methodParamsType))?methodParamsType+SPACE:EMPTY)
+            + CLOSE_BRACE +SPACE
+            + ((!StringUtils.isEmptyString(methodThrows))?methodThrows+SPACE:EMPTY)
+            );
+        if(hasElements){
+          methods.append(" {\n" );
+          for(Map<String, Map<String, String>> lstEntry : methodImplList){
+            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION);
+            String depClassName = invocation.get(DEPENDENT_CLASSNAME);
+            String method = invocation.get(METHODS);
+            String methodParam = invocation.get(DEPENDENT_METHOD_PARAMS);
+            String assignVarType = invocation.get(ASSIGN_VARIABLE_TYPES);
+            String assignVarName = invocation.get(ASSIGN_VARIABLE_NAME);
+            String assignVarValue = invocation.get(ASSIGN_VARIABLE_VALUE);
+            String assertion = invocation.get(ASSERTIONS_COMBO);
+            String packageName = getPackageNameFromFullPath(depClassName);
+//            importPackages.add(packageName);
+            String javaClassName = getJavaClassNameFromFullPath(depClassName);
+            boolean isAssert = !StringUtils.isEmptyString(assertion);
+            String methodInvoke = javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
+              
+            if(!StringUtils.isEmptyString(assignVarName)){
+              methods.append(TAB+TAB+TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
+            }             
+            boolean assign = !StringUtils.isEmptyString(assignVarName);
+            if(isAssert){
+              assertCount++;
+              switch (assertion) {
+              case DISPLAY_ASSERT_EQUALS:
+                methods.append(TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
+                break;
+                
+              case DISPLAY_ASSERT_NON_EQUALS:
+                methods.append(TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
+                break;
+                
+              case DISPLAY_ASSERT_NULL:
+                methods.append(TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
+                break;
+                
+              case DISPLAY_ASSERT_NOTNULL:
+                methods.append(TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
+                break;  
+                
+              case DISPLAY_ASSERT_TRUE:
+                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                break;  
+                
+              case DISPLAY_ASSERT_FALSE:
+                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                break;                  
+                
+              }
+            }  
+            else{
+              if(StringUtils.isEmptyString(assignVarName)){
+                methods.append(TAB+TAB+methodInvoke + COLON);
+              }
+            }
+          }
+          methods.append(" \n  }\n\n" );
+        }
+        else{
+          methods.append(
+                   " {\n"
+                  + "\n"
+                  + "     }\n");  
+        }
+      }
+    return methods.toString();
   }
 
 }
