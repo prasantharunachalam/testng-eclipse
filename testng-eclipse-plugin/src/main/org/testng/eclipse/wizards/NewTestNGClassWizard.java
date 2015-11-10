@@ -1,15 +1,5 @@
 package org.testng.eclipse.wizards;
 
-import static org.testng.eclipse.wizards.WizardConstants.CLOSE_BRACE;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_FINAL;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_MODIFIER;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_NAME;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_PARAMS_TYPE;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_RETURN_TYPE;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_STATIC;
-import static org.testng.eclipse.wizards.WizardConstants.METHOD_THROWS_CLAUSE;
-import static org.testng.eclipse.wizards.WizardConstants.OPEN_BRACE;
-import static org.testng.eclipse.wizards.WizardConstants.SPACE;
 import static org.testng.eclipse.wizards.WizardConstants.*;
 
 import java.io.ByteArrayInputStream;
@@ -252,6 +242,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
         String methodParamsType = (String) obj.get(METHOD_PARAMS_TYPE);
         String methodThrows = (String) obj.get(METHOD_THROWS_CLAUSE);        
         methods.append("\n"
+            + "    @Test\n"
             + TAB + TAB
             + ((!StringUtils.isEmptyString(methodModifier))?methodModifier+SPACE:EMPTY)
             + ((!StringUtils.isEmptyString(methodStatic))?methodStatic+SPACE:EMPTY)
@@ -274,47 +265,80 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             String assignVarName = invocation.get(ASSIGN_VARIABLE_NAME);
             String assignVarValue = invocation.get(ASSIGN_VARIABLE_VALUE);
             String assertion = invocation.get(ASSERTIONS_COMBO);
-            String packageName = getPackageNameFromFullPath(depClassName);
-            importPackages.add(packageName);
-            String javaClassName = getJavaClassNameFromFullPath(depClassName);
+            String javaClassName = null;
+            String javaClassNameVariable = null;
+            String packageName = null;
+            
+            if("String".equals(assignVarType)){
+              assignVarValue = "\""+assignVarValue+"\"";
+            }            
+            
+            if(depClassName.contains("src/main/") || depClassName.contains("src/") || depClassName.contains(".")){
+                packageName = getPackageNameFromFullPath(depClassName);
+                importPackages.add(packageName);
+            } 
+            
+            if(depClassName.contains("/") || depClassName.contains(".")){
+              javaClassName = getJavaClassNameFromFullPath(depClassName);
+            }else{
+              javaClassName = depClassName;
+            }   
+            
+            String firstChar = javaClassName.substring(0, 1).toLowerCase();
+            String remainingChars = javaClassName.substring(1);
+            javaClassNameVariable = firstChar+remainingChars;            
+            
+            String javaClassInstantiate = TAB+TAB+javaClassName + SPACE + javaClassNameVariable + SPACE + EQUALS + SPACE + " new " 
+                + javaClassName + OPEN_BRACE + CLOSE_BRACE + COLON;
+            methods.append(javaClassInstantiate);
+            
             boolean isAssert = !StringUtils.isEmptyString(assertion);
             String methodInvoke = javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
               
             if(!StringUtils.isEmptyString(assignVarName)){
-              methods.append(TAB+TAB+TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
+              methods.append("\n");
+              methods.append(TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
             }             
             boolean assign = !StringUtils.isEmptyString(assignVarName);
+            boolean assignVal = !StringUtils.isEmptyString(assignVarValue);
             if(isAssert){
               assertCount++;
               switch (assertion) {
               case DISPLAY_ASSERT_EQUALS:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
                 break;
                 
               case DISPLAY_ASSERT_NON_EQUALS:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NULL:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NOTNULL:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_TRUE:
-                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                methods.append("\n");
+                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_FALSE:
-                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                methods.append("\n");
+                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;                  
                 
               }
             }  
             else{
               if(StringUtils.isEmptyString(assignVarName)){
+                methods.append("\n");
                 methods.append(TAB+TAB+methodInvoke + COLON);
               }
             }

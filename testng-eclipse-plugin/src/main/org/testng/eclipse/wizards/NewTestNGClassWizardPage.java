@@ -118,12 +118,13 @@ public class NewTestNGClassWizardPage extends WizardPage {
   private Button b_final;
   private Button b_throws;
   
-  private List<Group> testMethodGoupsForNegativeCase = new CopyOnWriteArrayList<>();
-  private List<Group> testMethodGoupsForPositiveCase = new CopyOnWriteArrayList<>();
-  
   public static final String[] RETURN_TYPES = new String[] {
-      "void", "Integer", "Double", "Object", "Boolean"
-    };    
+      "void", "String", "Integer", "Long", "Double", "Object", "Boolean"
+    }; 
+  
+  public static final String[] ASSIGN_TYPES = new String[] {
+      "Object", "String", "Integer", "Long", "Double", "Boolean"
+    };  
   
   private AtomicInteger atomicIntegerForWritingJavaContent = new AtomicInteger(0);
   private Text m_assignVariableValueText; 
@@ -485,8 +486,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
       }
     });
     assignVariableTypes.setToolTipText("Select any of the below Method Return types. If not available, select any Java Type by clicking Browse");
-    for(String returnType : RETURN_TYPES){
-      assignVariableTypes.add(returnType);  
+    for(String assignType : ASSIGN_TYPES){
+      assignVariableTypes.add(assignType);  
     }     
 
     Label assignVariablesNameLabel = new Label(methodImpl, SWT.NULL);
@@ -657,9 +658,9 @@ public class NewTestNGClassWizardPage extends WizardPage {
     }
     //validations for method signature
     int hitsForAddMoreMethods = getAtomicInteger().get();
-    if(b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
+    if((b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
         || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
-        || !StringUtils.isEmptyString(m_methodNameText.getText())) {
+        || !StringUtils.isEmptyString(m_methodNameText.getText())) && hitsForAddMoreMethods == 1)  {
       if(validateMethodAndSetSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText)){
 //        setMethodSignatureAndImpl();
         //Iterate for every  method impl inside method row
@@ -788,9 +789,21 @@ public class NewTestNGClassWizardPage extends WizardPage {
           || DISPLAY_ASSERT_NON_EQUALS.equals(assertions.getText())) {
         if (StringUtils.isEmptyString(assignVariableValueText.getText())) {
           updateStatus("Assertion Value(Assert Equals/Assert NonEquals) cannot be empty");
+          g.setToolTipText(METHOD_SIGNATURE_GROUP);
           return false;
         }
       }
+      if (DISPLAY_ASSERT_TRUE.equals(assertions.getText())
+          || DISPLAY_ASSERT_FALSE.equals(assertions.getText())) {
+        if(!StringUtils.isEmptyString(assignVariableNameText.getText()) && !StringUtils.isEmptyString(assignVariableTypes.getText())){
+          if (!"Boolean".equals(assignVariableTypes.getText())) {
+            updateStatus("Assign Type has to be a Boolean for Assert True or Assert False");
+            g.setToolTipText(METHOD_SIGNATURE_GROUP);
+            return false;
+          }
+        }
+      }      
+      
     }
  /*   
     m_methodImplementation.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
@@ -959,10 +972,10 @@ public class NewTestNGClassWizardPage extends WizardPage {
                   put(ASSIGN_VARIABLE_VALUE, StringUtils.isEmptyString(assignVariableValueText.getText())?EMPTY:assignVariableValueText.getText());
                   put(ASSERTIONS_COMBO, StringUtils.isEmptyString(assertions.getText())?EMPTY:assertions.getText());
                 }}); 
-                methodImplListD.add(m_methodImplementation);
+                methodImplListD.add(m_methodImplementationD);
                 
-                Map<String, Object> methodObj = m_methodSignature.get(atomicIntegerForWritingJavaContent.get());
-                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplList);        
+                Map<String, Object> methodObj = m_methodSignatureD.get(atomicIntegerForWritingJavaContentD.get());
+                methodObj.put(METHOD_IMPLEMENTATION_LIST, methodImplListD);        
               }
           }      
           //set tooltip for user input methods -  override if merthod impl presents
@@ -1327,47 +1340,74 @@ public class NewTestNGClassWizardPage extends WizardPage {
             String assignVarName = invocation.get(ASSIGN_VARIABLE_NAME);
             String assignVarValue = invocation.get(ASSIGN_VARIABLE_VALUE);
             String assertion = invocation.get(ASSERTIONS_COMBO);
-            String packageName = getPackageNameFromFullPath(depClassName);
-//            importPackages.add(packageName);
-            String javaClassName = getJavaClassNameFromFullPath(depClassName);
+            String javaClassName = null;
+            String javaClassNameVariable = null;
+            
+            if("String".equals(assignVarType)){
+              assignVarValue = "\""+assignVarValue+"\"";
+            }
+            
+            if(depClassName.contains("/") || depClassName.contains(".")){
+              javaClassName = getJavaClassNameFromFullPath(depClassName);
+            }else{
+              javaClassName = depClassName;
+            }
+            
+            String firstChar = javaClassName.substring(0, 1).toLowerCase();
+            String remainingChars = javaClassName.substring(1);
+            javaClassNameVariable = firstChar+remainingChars;
+            
             boolean isAssert = !StringUtils.isEmptyString(assertion);
-            String methodInvoke = javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
+            String javaClassInstantiate = TAB+TAB+javaClassName + SPACE + javaClassNameVariable + SPACE + EQUALS + SPACE + " new " 
+                                          + javaClassName + OPEN_BRACE + CLOSE_BRACE + COLON;
+            methods.append(javaClassInstantiate);
+            
+            String methodInvoke = javaClassNameVariable+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
               
             if(!StringUtils.isEmptyString(assignVarName)){
-              methods.append(TAB+TAB+TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
+              methods.append("\n");
+              methods.append(TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
             }             
             boolean assign = !StringUtils.isEmptyString(assignVarName);
+            boolean assignVal = !StringUtils.isEmptyString(assignVarValue);
             if(isAssert){
               assertCount++;
               switch (assertion) {
               case DISPLAY_ASSERT_EQUALS:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
                 break;
                 
               case DISPLAY_ASSERT_NON_EQUALS:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NULL:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NOTNULL:
+                methods.append("\n");
                 methods.append(TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_TRUE:
-                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                methods.append("\n");
+                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_FALSE:
-                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+"\"Your Message\""+CLOSE_BRACE+COLON);
+                methods.append("\n");
+                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;                  
                 
               }
             }  
             else{
               if(StringUtils.isEmptyString(assignVarName)){
+                methods.append("\n");
                 methods.append(TAB+TAB+methodInvoke + COLON);
               }
             }

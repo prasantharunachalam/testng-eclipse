@@ -68,7 +68,7 @@ public class NewDependencyClassWizardPage extends WizardPage {
   private Button b_final;
   private Button b_throws;
   public static final String[] RETURN_TYPES = new String[] {
-      "void", "Integer", "Double", "Object", "Boolean"
+      "void", "Integer", "Double", "String", "Object", "Boolean"
     };
   private List<Control> mainMethodGoup = new CopyOnWriteArrayList<>();
 
@@ -415,9 +415,9 @@ public class NewDependencyClassWizardPage extends WizardPage {
     //validations for method signature
     Group  g = (Group)mainMethodGoup.get(0);
     int hitsForAddMoreMethods = getAtomicInteger().get();
-    if(b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
+    if((b_static.getSelection() || b_final.getSelection() || b_throws.getSelection() || !StringUtils.isEmptyString(modifierNames.getText()) 
         || !StringUtils.isEmptyString(m_methodParamsText.getText()) || !StringUtils.isEmptyString(m_returnTypeText.getText()) 
-        || !StringUtils.isEmptyString(m_methodNameText.getText())) {
+        || !StringUtils.isEmptyString(m_methodNameText.getText())) && hitsForAddMoreMethods == 1) {
       if(!validateAndSetMethodSignature(b_static, b_final, b_throws, modifierNames, m_methodParamsText, m_returnTypeText, m_methodNameText)){
         g.setToolTipText(METHOD_SIGNATURE_GROUP);
         return;
