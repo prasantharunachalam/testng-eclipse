@@ -242,7 +242,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
         String methodParamsType = (String) obj.get(METHOD_PARAMS_TYPE);
         String methodThrows = (String) obj.get(METHOD_THROWS_CLAUSE);        
         methods.append("\n"
-            + "    @Test\n"
+            + TAB+TAB+"@Test\n"
             + TAB + TAB
             + ((!StringUtils.isEmptyString(methodModifier))?methodModifier+SPACE:EMPTY)
             + ((!StringUtils.isEmptyString(methodStatic))?methodStatic+SPACE:EMPTY)
@@ -255,7 +255,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             + ((!StringUtils.isEmptyString(methodThrows))?methodThrows+SPACE:EMPTY)
             );
         if(hasElements){
-          methods.append(" {\n" );
+          methods.append(TAB+"{\n" );
           for(Map<String, Map<String, String>> lstEntry : methodImplList){
             Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION);
             String depClassName = invocation.get(DEPENDENT_CLASSNAME);
@@ -347,9 +347,9 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
         }
         else{
           methods.append(
-                   " {\n"
-                  + "    throw new RuntimeException(\"Test not implemented\");\n"
-                  + "  }\n");  
+                  TAB + "{\n"
+                  + TAB+TAB+"throw new RuntimeException(\"Test not implemented\");\n"
+                  + TAB+"}\n");  
         }
       }
     }    

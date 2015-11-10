@@ -1416,9 +1416,9 @@ public class NewTestNGClassWizardPage extends WizardPage {
         }
         else{
           methods.append(
-                   " {\n"
+              TAB +"{\n"
                   + "\n"
-                  + "     }\n");  
+                  +TAB+TAB+ "}\n");  
         }
       }
     return methods.toString();

@@ -141,18 +141,19 @@ public class NewDependencyClassWizard extends Wizard implements INewWizard {
 	    Map<String, String> obj = map.get(i);
 	    if(obj != null){
         methods.append("\n"
+            + TAB + TAB
             + obj.get(METHOD_MODIFIER)+SPACE
-            + obj.get(METHOD_STATIC)+SPACE
-            + obj.get(METHOD_FINAL)+SPACE
+            + (!StringUtils.isEmptyString(obj.get(METHOD_STATIC))?obj.get(METHOD_STATIC)+SPACE:EMPTY)
+            + (!StringUtils.isEmptyString(obj.get(METHOD_FINAL))?obj.get(METHOD_FINAL)+SPACE:EMPTY)
             +obj.get(METHOD_RETURN_TYPE)+ SPACE
             + obj.get(METHOD_NAME)+SPACE
-            + OPEN_BRACE  +SPACE
-            + obj.get(METHOD_PARAMS_TYPE)+SPACE
-            + CLOSE_BRACE +SPACE   
-            + obj.get(METHOD_THROWS_CLAUSE)+SPACE
-            + " {\n"
-            + "    throw new RuntimeException(\"Method not implemented\");\n"
-            + "  }\n");	    
+            + OPEN_BRACE
+            + (!StringUtils.isEmptyString(obj.get(METHOD_PARAMS_TYPE)) ? obj.get(METHOD_PARAMS_TYPE)+SPACE : EMPTY)
+            + CLOSE_BRACE    
+            + (!StringUtils.isEmptyString(obj.get(METHOD_THROWS_CLAUSE)) ? SPACE+obj.get(METHOD_THROWS_CLAUSE) : EMPTY)
+            + TAB+"{\n"
+            + TAB+TAB+TAB+TAB+"throw new RuntimeException(\"Method not implemented\");\n"
+            + TAB+TAB+"}\n");	    
 	    }
 	  }
 /*	  
