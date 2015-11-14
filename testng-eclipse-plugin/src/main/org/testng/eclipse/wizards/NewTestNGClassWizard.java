@@ -256,8 +256,10 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             );
         if(hasElements){
           methods.append(TAB+"{\n" );
+          int loopCounter = 0;
           for(Map<String, Map<String, String>> lstEntry : methodImplList){
-            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION);
+            loopCounter++;
+            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION+loopCounter);
             String depClassName = invocation.get(DEPENDENT_CLASSNAME);
             String method = invocation.get(METHODS);
             String methodParam = invocation.get(DEPENDENT_METHOD_PARAMS);

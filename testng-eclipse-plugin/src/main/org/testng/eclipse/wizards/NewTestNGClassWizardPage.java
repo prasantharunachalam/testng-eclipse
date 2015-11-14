@@ -99,7 +99,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
   private AtomicInteger atomicInteger = new AtomicInteger(1);
 //  private Map<Integer, Map<String, Control>> m_methodSignatureRowObjects = new HashMap<>();
   private Map<Integer, Map<String, Object>> m_methodSignature = new HashMap<>();
-  private Map<String, Map<String, String>> m_methodImplementation = new HashMap<>();
+  private Map<String, Map<String, String>> m_methodImplementation;// = new HashMap<>();
   // Map<String, Object>
   // first map Object will be Map<String, Control>
   private Map<String, Control> m_methodSignatureRowObjects;  
@@ -112,7 +112,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
 //  private Map<String, Map<String, Object>> m_methodHolder = new HashMap<>(); 
   private Map<String, Object> m_methodSignImplContainer;
   
-  private List<Map<String, Map<String, String>>> methodImplList = new ArrayList<>();
+  private List<Map<String, Map<String, String>>> methodImplList;// = new ArrayList<>();
   
   private Button b_static;
   private Button b_final;
@@ -716,7 +716,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
               if(validateMethodAndSetSignature(b_st, b_fn, b_th, c_md, t_mp, c_mrt, t_mn)){
 //                setMethodSignatureAndImpl();
                 //Iterate for every  method impl inside method row 
-                Map<String, Object> obj =  m_methodRowObjects.get(atomicInteger.get());
+                Map<String, Object> obj =  m_methodRowObjects.get(i);//atomicInteger.get()
                 List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) obj.get(METHOD_ROW_IMPL);
                 for(Map<String, Control> map :objImplList){
                   Text t_dc = (Text)map.get(DEPENDENT_CLASSNAME);
@@ -878,7 +878,9 @@ public class NewTestNGClassWizardPage extends WizardPage {
           
           //Iterate for every  method impl inside method row 
           List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
-      
+          m_methodImplementation = new HashMap<>();
+          methodImplList = new ArrayList<>();
+          int loopCounter = 0;
           for(Map<String, Control> map :objImplList){
             final Text m_dependentClassNameText = (Text)map.get(DEPENDENT_CLASSNAME);
             final Combo methods = (Combo)map.get(METHODS);
@@ -890,7 +892,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
             
               if(!StringUtils.isEmptyString(m_dependentClassNameText.getText()) && !StringUtils.isEmptyString(methods.getText())) {
                 //impl present for 1st method....
-                m_methodImplementation.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
+                loopCounter++;
+                m_methodImplementation.put(METHOD_IMPLEMENTATION+loopCounter, new HashMap<String, String> () {{
                   put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
                   put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
                   put(DEPENDENT_METHOD_PARAMS, StringUtils.isEmptyString(dependentMethodParamsText.getText())?EMPTY:dependentMethodParamsText.getText());
