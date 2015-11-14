@@ -936,6 +936,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
       
       if(!StringUtils.isEmptyString(m_returnTypeText.getText()) && !StringUtils.isEmptyString(m_methodNameText.getText())) {
           //method signature for 1st method...
+        
         m_methodSignatureD.put(atomicIntegerForWritingJavaContentD.addAndGet(1), new HashMap<String, Object> () {{
             put(METHOD_RETURN_TYPE, StringUtils.isEmptyString(m_returnTypeText.getText())?EMPTY:m_returnTypeText.getText());
             put(METHOD_NAME, StringUtils.isEmptyString(m_methodNameText.getText())?EMPTY:m_methodNameText.getText());
@@ -954,7 +955,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
           
           //Iterate for every  method impl inside method row 
           List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
-      
+          int loopCounter = 0;
           for(Map<String, Control> map :objImplList){
             final Text m_dependentClassNameText = (Text)map.get(DEPENDENT_CLASSNAME);
             final Combo methods = (Combo)map.get(METHODS);
@@ -966,7 +967,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
             
               if(!StringUtils.isEmptyString(m_dependentClassNameText.getText()) && !StringUtils.isEmptyString(methods.getText())) {
                 //impl present for 1st method....
-                m_methodImplementationD.put(METHOD_IMPLEMENTATION, new HashMap<String, String> () {{
+                loopCounter++;
+                m_methodImplementationD.put(METHOD_IMPLEMENTATION+loopCounter, new HashMap<String, String> () {{
                   put(DEPENDENT_CLASSNAME, StringUtils.isEmptyString(m_dependentClassNameText.getText())?EMPTY:m_dependentClassNameText.getText());
                   put(METHODS, StringUtils.isEmptyString(methods.getText())?EMPTY:methods.getText());
                   put(DEPENDENT_METHOD_PARAMS, StringUtils.isEmptyString(dependentMethodParamsText.getText())?EMPTY:dependentMethodParamsText.getText());
@@ -1334,8 +1336,10 @@ public class NewTestNGClassWizardPage extends WizardPage {
             );
         if(hasElements){
           methods.append(" {\n" );
+          int loopCounter = 0;
           for(Map<String, Map<String, String>> lstEntry : methodImplList){
-            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION);
+            loopCounter++;
+            Map<String, String> invocation = lstEntry.get(METHOD_IMPLEMENTATION+loopCounter);
             String depClassName = invocation.get(DEPENDENT_CLASSNAME);
             String method = invocation.get(METHODS);
             String methodParam = invocation.get(DEPENDENT_METHOD_PARAMS);
