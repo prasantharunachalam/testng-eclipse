@@ -956,6 +956,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
           //Iterate for every  method impl inside method row 
           List<Map<String, Control>>  objImplList = (List<Map<String, Control>>) rowObj.get(METHOD_ROW_IMPL);
           int loopCounter = 0;
+          m_methodImplementationD = new HashMap<>();
+          methodImplListD = new ArrayList<>();          
           for(Map<String, Control> map :objImplList){
             final Text m_dependentClassNameText = (Text)map.get(DEPENDENT_CLASSNAME);
             final Combo methods = (Combo)map.get(METHODS);

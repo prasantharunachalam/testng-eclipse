@@ -292,10 +292,10 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             
             String javaClassInstantiate = TAB+TAB+javaClassName + SPACE + javaClassNameVariable + SPACE + EQUALS + SPACE + " new " 
                 + javaClassName + OPEN_BRACE + CLOSE_BRACE + COLON;
-            methods.append(javaClassInstantiate);
+            methods.append(TAB+javaClassInstantiate);
             
             boolean isAssert = !StringUtils.isEmptyString(assertion);
-            String methodInvoke = javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
+            String methodInvoke = TAB+javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
               
             if(!StringUtils.isEmptyString(assignVarName)){
               methods.append("\n");
@@ -345,7 +345,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
               }
             }
           }
-          methods.append(" \n  }\n\n" );
+          methods.append(" \n"+TAB+TAB+"}\n\n" );
         }
         else{
           methods.append(
