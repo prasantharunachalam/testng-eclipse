@@ -3,6 +3,9 @@
  */
 package org.testng.eclipse.wizards;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author sairam
  *
@@ -74,4 +77,13 @@ public class WizardConstants {
   public static final String DISPLAY_ASSERT_FALSE = "Assert False";    
   
   public static final String METHOD_SIGNATURE_GROUP = "Hover over this once you are ready with Method Signatures to check how the Method Structures looks like!";
+  
+  public static Map<String, String> assertMap = new HashMap(){{
+    put(DISPLAY_ASSERT_EQUALS, TESTNG_ASSERT_EQUALS);
+    put(DISPLAY_ASSERT_NON_EQUALS, TESTNG_ASSERT_NON_EQUALS);
+    put(DISPLAY_ASSERT_NULL, TESTNG_ASSERT_NULL);
+    put(DISPLAY_ASSERT_NOTNULL, TESTNG_ASSERT_NOTNULL);
+    put(DISPLAY_ASSERT_TRUE, TESTNG_ASSERT_TRUE);
+    put(DISPLAY_ASSERT_FALSE, TESTNG_ASSERT_FALSE);
+  }};
 }

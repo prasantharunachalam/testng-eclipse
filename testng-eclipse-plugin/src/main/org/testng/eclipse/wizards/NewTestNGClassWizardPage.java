@@ -1230,6 +1230,7 @@ public class NewTestNGClassWizardPage extends WizardPage {
   public SelectionAdapter toSelectionAdapterForShow(final Composite container){
     return new SelectionAdapter() {
       public void widgetSelected(SelectionEvent e) {
+        StringBuilder methodsImpl = new StringBuilder();
         Button btn = (Button) e.getSource();
         int incrmValue = (Integer)btn.getData();
         
@@ -1252,17 +1253,37 @@ public class NewTestNGClassWizardPage extends WizardPage {
         String invocation = typeName.getText()+"."+methodName.getText()+(!StringUtils.isEmptyString(methodParams.getText())?methodParamsText:"()");
         if(!StringUtils.isEmptyString(assignVarTypes.getText()) && !StringUtils.isEmptyString(varName.getText())){
           assignText = assignVarTypes.getText()+" "+varName.getText()+" = ";
+          methodsImpl.append(TAB+assignText);
         }
         if(!StringUtils.isEmptyString(assertType.getText())){
-//          assertText = assertType.getText()+"(";
-          assertText = TESTNG_ASSERT_NOTNULL+"(";
+          assertText = assertMap.get(assertType.getText())+"(";
           assertFlag = true;
-        }        
+        }      
+        boolean assertValues = false;
         if(!StringUtils.isEmptyString(typeName.getText()) && !StringUtils.isEmptyString(methodName.getText())){
-          if(assertFlag)
-            btn.setToolTipText("   \n\n"+TAB+TAB+TAB+assertText+assignText + invocation+");"+TAB+TAB+TAB+"\n\n ");
+          if(assertFlag){
+            if(assertText.contains(TESTNG_ASSERT_EQUALS) || assertText.contains(TESTNG_ASSERT_NON_EQUALS) 
+                || (assertText.contains(TESTNG_ASSERT_TRUE) || assertText.contains(TESTNG_ASSERT_FALSE) && !StringUtils.isEmptyString(varValue.getText()) )){
+              assertValues = true;
+            }
+            boolean appendString = false;
+            if(assertValues){
+              if(assertText.contains(TESTNG_ASSERT_TRUE) || assertText.contains(TESTNG_ASSERT_FALSE)){
+                appendString = true;
+              }
+            }
+            if(!StringUtils.isEmptyString((varName.getText()))){
+              methodsImpl.append(invocation);
+              methodsImpl.append("\n"+TAB+assertText+varName.getText()+(assertValues?COMMA+TAB+(appendString?("\""+varValue.getText()+"\""):varValue.getText()):EMPTY) 
+                  +");"+TAB+TAB+TAB+"\n\n ");
+              btn.setToolTipText(methodsImpl.toString());
+            }else{
+              methodsImpl.append("\n"+TAB+assertText+(assertValues?COMMA+TAB+invocation:EMPTY) +");"+TAB+TAB+TAB+"\n\n ");
+              btn.setToolTipText(methodsImpl.toString());
+            }
+          }
           else
-            btn.setToolTipText(assignText + invocation + ";"+"\n\n");
+            btn.setToolTipText(TAB+assignText + invocation + ";"+"\n\n");
         }
         else{
           btn.setToolTipText("Click on this to check how the user selection inputs looks like...");

@@ -299,7 +299,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
               
             if(!StringUtils.isEmptyString(assignVarName)){
               methods.append("\n");
-              methods.append(TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
+              methods.append(TAB+TAB+TAB+assignVarType + SPACE + assignVarName + SPACE + EQUALS + SPACE +methodInvoke + COLON);
             }             
             boolean assign = !StringUtils.isEmptyString(assignVarName);
             boolean assignVal = !StringUtils.isEmptyString(assignVarValue);
@@ -308,32 +308,32 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
               switch (assertion) {
               case DISPLAY_ASSERT_EQUALS:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE +COLON);
                 break;
                 
               case DISPLAY_ASSERT_NON_EQUALS:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_NON_EQUALS+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+assignVarValue+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NULL:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_NULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;
                 
               case DISPLAY_ASSERT_NOTNULL:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_NOTNULL+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_TRUE:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_TRUE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;  
                 
               case DISPLAY_ASSERT_FALSE:
                 methods.append("\n");
-                methods.append(TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
+                methods.append(TAB+TAB+TAB+TESTNG_ASSERT_FALSE+OPEN_BRACE+(assign ? assignVarName : methodInvoke)+COMMA+(assignVal?"\""+assignVarValue+"\"":"\"Your Message\"")+CLOSE_BRACE+COLON);
                 break;                  
                 
               }
@@ -341,7 +341,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             else{
               if(StringUtils.isEmptyString(assignVarName)){
                 methods.append("\n");
-                methods.append(TAB+TAB+methodInvoke + COLON);
+                methods.append(TAB+TAB+TAB+methodInvoke + COLON);
               }
             }
           }
