@@ -1263,7 +1263,8 @@ public class NewTestNGClassWizardPage extends WizardPage {
         if(!StringUtils.isEmptyString(typeName.getText()) && !StringUtils.isEmptyString(methodName.getText())){
           if(assertFlag){
             if(assertText.contains(TESTNG_ASSERT_EQUALS) || assertText.contains(TESTNG_ASSERT_NON_EQUALS) 
-                || (assertText.contains(TESTNG_ASSERT_TRUE) || assertText.contains(TESTNG_ASSERT_FALSE) && !StringUtils.isEmptyString(varValue.getText()) )){
+                || ( (assertText.contains(TESTNG_ASSERT_TRUE) && !StringUtils.isEmptyString(varValue.getText()))
+                    || (assertText.contains(TESTNG_ASSERT_FALSE) && !StringUtils.isEmptyString(varValue.getText())) )){
               assertValues = true;
             }
             boolean appendString = false;
