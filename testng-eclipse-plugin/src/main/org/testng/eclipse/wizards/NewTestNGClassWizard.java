@@ -295,7 +295,7 @@ public class NewTestNGClassWizard extends Wizard implements INewWizard {
             methods.append(TAB+javaClassInstantiate);
             
             boolean isAssert = !StringUtils.isEmptyString(assertion);
-            String methodInvoke = TAB+javaClassName+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
+            String methodInvoke = TAB+javaClassNameVariable+DOT+method+OPEN_BRACE+(!StringUtils.isEmptyString(methodParam)?methodParam:EMPTY)+CLOSE_BRACE;
               
             if(!StringUtils.isEmptyString(assignVarName)){
               methods.append("\n");

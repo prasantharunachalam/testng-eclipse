@@ -220,8 +220,14 @@ public class SWTUtil {
   public static String getPackageNameFromFullPath(String className) {
     int startIndex1 = className.lastIndexOf("src/main/");
     int startIndex2 = className.lastIndexOf("src/");
+    int startIndex3 = className.lastIndexOf("src/main/java");
     int lastIndex = className.lastIndexOf(".");
-    int startIndex = (startIndex1 == -1 ? startIndex2 + 4 : startIndex1 + 9);
+    int startIndex = 0;
+    if(startIndex3 == -1){
+      startIndex = (startIndex1 == -1 ? startIndex2 + 4 : startIndex1 + 9);
+    }else{
+      startIndex = startIndex3 + 14;
+    }
     return className.substring(startIndex, lastIndex).replaceAll("/", ".");
   }  
   
